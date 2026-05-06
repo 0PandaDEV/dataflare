@@ -16,42 +16,43 @@ jobs:
     name: ${{ matrix.job.name }}
     runs-on: ${{ matrix.job.os }}
     strategy:
+      fail-fast: false
       matrix:
         job:
           - name: macOS-x86_64
             os: macos-26
             target: x86_64-apple-darwin
-            bundle: release/darwin/x86_64
+            platform: darwin-x86_64
             arch: x64
 
           - name: macOS-aarch64
             os: macos-26
             target: aarch64-apple-darwin
-            bundle: release/darwin/aarch64
+            platform: darwin-aarch64
             arch: aarch64
 
           - name: Windows-x86_64
             os: windows-2022
             target: x86_64-pc-windows-msvc
-            bundle: release/windows/x86_64
+            platform: windows-x86_64
             arch: x64
 
           - name: Windows-aarch64
             os: windows-11-arm
             target: aarch64-pc-windows-msvc
-            bundle: release/windows/aarch64
+            platform: windows-aarch64
             arch: arm64
 
           - name: Linux-x86_64
             os: ubuntu-22.04
             target: x86_64-unknown-linux-gnu
-            bundle: release/linux/x86_64
+            platform: linux-x86_64
             arch: amd64
 
           - name: Linux-aarch64
             os: ubuntu-22.04-arm
             target: aarch64-unknown-linux-gnu
-            bundle: release/linux/aarch64
+            platform: linux-aarch64
             arch: aarch64
 
     steps:
@@ -59,10 +60,6 @@ jobs:
         uses: actions/checkout@v6
         with:
           ref: ${{ inputs.tag || github.ref }}
-
-      # TODO: Cache cargo, pnpm
-      # Because each release uses a new tag, the cache can’t be hit.
-      # https://docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching#restrictions-for-accessing-a-cache
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -103,45 +100,90 @@ jobs:
         run: |
           bun run build --target ${{ matrix.job.target }}
 
-      - name: Organize App files (macOS)
+      - name: Stage artifacts (macOS)
         if: runner.os == 'macOS'
+        shell: bash
+        env:
+          PREFIX: Dataflare-${{ env.APP_VERSION }}-${{ matrix.job.platform }}
+          BUNDLE_DIR: target/${{ matrix.job.target }}/release/bundle
         run: |
-          mkdir -p ${{ matrix.job.bundle }}
-          mv target/${{ matrix.job.target }}/release/bundle/dmg/Dataflare_${{ env.APP_VERSION }}_${{ matrix.job.arch }}.dmg ${{ matrix.job.bundle }}/Dataflare.dmg
-          mv target/${{ matrix.job.target }}/release/bundle/macos/Dataflare.app.tar.gz ${{ matrix.job.bundle }}
-          echo '{"version":"${{ env.APP_VERSION }}","url":"https://assets.dataflare.app/${{ matrix.job.bundle }}/Dataflare.app.tar.gz","signature":"'$(cat target/${{ matrix.job.target }}/release/bundle/macos/Dataflare.app.tar.gz.sig)'"}' > ${{ matrix.job.bundle }}/latest.json
-          cp ${{ matrix.job.bundle }}/Dataflare.dmg ${{ matrix.job.bundle }}/Dataflare-${{ env.APP_VERSION }}.dmg
+          mkdir -p dist
+          mv "$BUNDLE_DIR/dmg/Dataflare_${{ env.APP_VERSION }}_${{ matrix.job.arch }}.dmg" "dist/$PREFIX.dmg"
+          mv "$BUNDLE_DIR/macos/Dataflare.app.tar.gz" "dist/$PREFIX.app.tar.gz"
+          mv "$BUNDLE_DIR/macos/Dataflare.app.tar.gz.sig" "dist/$PREFIX.app.tar.gz.sig"
+          DOWNLOAD_URL="https://github.com/${{ github.repository }}/releases/latest/download/$PREFIX.app.tar.gz"
+          jq -n \
+            --arg version "${{ env.APP_VERSION }}" \
+            --arg url "$DOWNLOAD_URL" \
+            --arg signature "$(cat "dist/$PREFIX.app.tar.gz.sig")" \
+            '{version: $version, url: $url, signature: $signature}' \
+            > "dist/latest-${{ matrix.job.platform }}.json"
 
-      - name: Organize App files (Linux)
+      - name: Stage artifacts (Linux)
         if: runner.os == 'Linux'
+        shell: bash
+        env:
+          PREFIX: Dataflare-${{ env.APP_VERSION }}-${{ matrix.job.platform }}
+          BUNDLE_DIR: target/${{ matrix.job.target }}/release/bundle
         run: |
-          mkdir -p ${{ matrix.job.bundle }}
-          mv target/${{ matrix.job.target }}/release/bundle/appimage/Dataflare_${{ env.APP_VERSION }}_${{ matrix.job.arch }}.AppImage ${{ matrix.job.bundle }}/Dataflare.AppImage
-          mv target/${{ matrix.job.target }}/release/bundle/appimage/Dataflare_${{ env.APP_VERSION }}_${{ matrix.job.arch }}.AppImage.tar.gz ${{ matrix.job.bundle }}/Dataflare.AppImage.tar.gz
-          echo '{"version":"${{ env.APP_VERSION }}","url":"https://assets.dataflare.app/${{ matrix.job.bundle }}/Dataflare.AppImage.tar.gz","signature":"'$(cat target/${{ matrix.job.target }}/release/bundle/appimage/Dataflare_${{ env.APP_VERSION }}_${{ matrix.job.arch }}.AppImage.tar.gz.sig)'"}' > ${{ matrix.job.bundle }}/latest.json
-          cp ${{ matrix.job.bundle }}/Dataflare.AppImage ${{ matrix.job.bundle }}/Dataflare-${{ env.APP_VERSION }}.AppImage
+          mkdir -p dist
+          mv "$BUNDLE_DIR/appimage/Dataflare_${{ env.APP_VERSION }}_${{ matrix.job.arch }}.AppImage" "dist/$PREFIX.AppImage"
+          mv "$BUNDLE_DIR/appimage/Dataflare_${{ env.APP_VERSION }}_${{ matrix.job.arch }}.AppImage.tar.gz" "dist/$PREFIX.AppImage.tar.gz"
+          mv "$BUNDLE_DIR/appimage/Dataflare_${{ env.APP_VERSION }}_${{ matrix.job.arch }}.AppImage.tar.gz.sig" "dist/$PREFIX.AppImage.tar.gz.sig"
+          DOWNLOAD_URL="https://github.com/${{ github.repository }}/releases/latest/download/$PREFIX.AppImage.tar.gz"
+          jq -n \
+            --arg version "${{ env.APP_VERSION }}" \
+            --arg url "$DOWNLOAD_URL" \
+            --arg signature "$(cat "dist/$PREFIX.AppImage.tar.gz.sig")" \
+            '{version: $version, url: $url, signature: $signature}' \
+            > "dist/latest-${{ matrix.job.platform }}.json"
 
-      - name: Organize App files (Windows)
+      - name: Stage artifacts (Windows)
         if: runner.os == 'Windows'
         shell: bash
+        env:
+          PREFIX: Dataflare-${{ env.APP_VERSION }}-${{ matrix.job.platform }}
+          BUNDLE_DIR: target/${{ matrix.job.target }}/release/bundle
         run: |
-          mkdir -p ${{ matrix.job.bundle }}
-          mv target/${{ matrix.job.target }}/release/bundle/nsis/Dataflare_${{ env.APP_VERSION }}_${{ matrix.job.arch }}-setup.exe ${{ matrix.job.bundle }}/Dataflare-Setup.exe
-          mv target/${{ matrix.job.target }}/release/bundle/nsis/Dataflare_${{ env.APP_VERSION }}_${{ matrix.job.arch }}-setup.nsis.zip ${{ matrix.job.bundle }}/Dataflare.zip
-          echo '{"version":"${{ env.APP_VERSION }}","url":"https://assets.dataflare.app/${{ matrix.job.bundle }}/Dataflare.zip","signature":"'$(cat target/${{ matrix.job.target }}/release/bundle/nsis/Dataflare_${{ env.APP_VERSION }}_${{ matrix.job.arch }}-setup.nsis.zip.sig)'"}' > ${{ matrix.job.bundle }}/latest.json
-          cp ${{ matrix.job.bundle }}/Dataflare-Setup.exe ${{ matrix.job.bundle }}/Dataflare-Setup-${{ env.APP_VERSION }}.exe
+          mkdir -p dist
+          mv "$BUNDLE_DIR/nsis/Dataflare_${{ env.APP_VERSION }}_${{ matrix.job.arch }}-setup.exe" "dist/$PREFIX-setup.exe"
+          mv "$BUNDLE_DIR/nsis/Dataflare_${{ env.APP_VERSION }}_${{ matrix.job.arch }}-setup.nsis.zip" "dist/$PREFIX-setup.nsis.zip"
+          mv "$BUNDLE_DIR/nsis/Dataflare_${{ env.APP_VERSION }}_${{ matrix.job.arch }}-setup.nsis.zip.sig" "dist/$PREFIX-setup.nsis.zip.sig"
+          DOWNLOAD_URL="https://github.com/${{ github.repository }}/releases/latest/download/$PREFIX-setup.nsis.zip"
+          jq -n \
+            --arg version "${{ env.APP_VERSION }}" \
+            --arg url "$DOWNLOAD_URL" \
+            --arg signature "$(cat "dist/$PREFIX-setup.nsis.zip.sig")" \
+            '{version: $version, url: $url, signature: $signature}' \
+            > "dist/latest-${{ matrix.job.platform }}.json"
 
-      - name: Upload to R2
-        uses: wyhaya/upload-cloudflare-r2@9ac9d847e87f5674ed5f14c11a2f0f44d8a5c368
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
         with:
-          account_id: ${{ secrets.R2_ACCOUNT_ID }}
-          access_key_id: ${{ secrets.R2_ACCESS_KEY_ID }}
-          secret_access_key: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-          bucket: ${{ secrets.R2_BUCKET }}
-          source_directory: ${{ matrix.job.bundle }}
-          destination_directory: ${{ matrix.job.bundle }}
-          cache_control: |
-            .*              public, max-age=0, must-revalidate
+          name: dataflare-${{ matrix.job.platform }}
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 7
 
-            # Match any file with a version number
-            (\d+\.)+\w+$    public, max-age=2678400, immutable
+  release:
+    name: Publish release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          pattern: dataflare-*
+          merge-multiple: true
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.tag || github.ref_name }}
+          name: ${{ inputs.tag || github.ref_name }}
+          make_latest: "true"
+          fail_on_unmatched_files: true
+          files: dist/*
