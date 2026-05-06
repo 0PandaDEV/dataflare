@@ -18,10 +18,6 @@ export const showSettingsWindow = (tab?: SettingsTab) => {
     return invoke('show_settings_window', { tab })
 }
 
-export const showActivateWindow = () => {
-    return invoke('show_activate_window')
-}
-
 export const showBackupWindow = (connection: Connection) => {
     return invoke('show_backup_window', {
         connection

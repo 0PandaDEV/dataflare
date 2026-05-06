@@ -10,27 +10,20 @@ import {
     DropdownMenuSeparator,
     ScrollView
 } from '../../ui'
-import { useCheckCreateConnection } from './hooks'
-
 const ImportConnection = lazy(() => import('./import'))
 
 export const NewConnectionMenu = ({ onCreate }: { onCreate(config: Connection): void }) => {
     const { t } = useTranslation()
-    const checker = useCheckCreateConnection()
     const [showImportUrl, setShowImportUrl] = useState(false)
 
     const onClickImport = () => {
-        if (checker(1)) {
-            setShowImportUrl(true)
-        }
+        setShowImportUrl(true)
     }
 
     const onClickItem = (type: DatabaseType) => {
-        if (checker(1)) {
-            import('./utils')
-                .then((module) => module.createConnectionConfig(type))
-                .then((config) => onCreate(config))
-        }
+        import('./utils')
+            .then((module) => module.createConnectionConfig(type))
+            .then((config) => onCreate(config))
     }
 
     return (

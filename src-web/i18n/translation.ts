@@ -138,48 +138,6 @@ export const translationText = {
         [Language.frFR]: 'À propos',
         [Language.zhCN]: '关于'
     },
-    activate: {
-        [Language.en]: `Activate`,
-        [Language.de]: 'Aktivieren',
-        [Language.frFR]: 'Activé',
-        [Language.zhCN]: `激活`
-    },
-    activateLimit: {
-        [Language.en]: `You are currently using the free version, which can create a maximum of 2 database connections.`,
-        [Language.de]: `Sie verwenden derzeit die kostenlose Version, die maximal 2 Datenbankverbindungen erstellen kann.`,
-        [Language.frFR]: `Vous utilisez actuellement la version gratuite, qui peut créer un maximum de 2 connexions de base de données.`,
-        [Language.zhCN]: `您当前使用的是免费版本，最多可以创建 2 个数据库连接。`
-    },
-    licenseKey: {
-        [Language.en]: `License Key`,
-        [Language.de]: 'Lizenzschlüssel',
-        [Language.frFR]: `Clé de licence`,
-        [Language.zhCN]: `许可证密钥`
-    },
-    activateSuccessTitle: {
-        [Language.en]: 'Activation Successful',
-        [Language.de]: 'Aktivierung Erfolgreich',
-        [Language.frFR]: 'Activation Réussie',
-        [Language.zhCN]: '激活成功'
-    },
-    activateSuccessMessage: {
-        [Language.en]: `You have successfully activated Dataflare!`,
-        [Language.de]: 'Sie haben Dataflare erfolgreich aktiviert!',
-        [Language.frFR]: `Vous avez activé Dataflare avec succès !`,
-        [Language.zhCN]: `你已成功激活 Dataflare!`
-    },
-    purchaseLicense: {
-        [Language.en]: `Purchase License`,
-        [Language.de]: 'Lizenz erwerben',
-        [Language.frFR]: `Acheter un license`,
-        [Language.zhCN]: `购买许可证`
-    },
-    licenseManager: {
-        [Language.en]: `License Manager`,
-        [Language.de]: 'Lizenz-Verwaltung',
-        [Language.frFR]: `Gestionnaire de license`,
-        [Language.zhCN]: `许可证管理器`
-    },
     table: {
         [Language.en]: `Table`,
         [Language.de]: 'Tabelle',
@@ -2017,12 +1975,6 @@ export const translationFn = {
         [Language.de]: (v: string) => `Neue Version (${v}) installiert!`,
         [Language.frFR]: (v: string) => `Nouvelle version (${v}) installée !`,
         [Language.zhCN]: (v: string) => `新版本(${v}) 已安装！`
-    },
-    activate: {
-        [Language.en]: (v: string) => `Activate ${v}`,
-        [Language.de]: (v: string) => `${v} aktivieren`,
-        [Language.frFR]: (v: string) => `Activé ${v}`,
-        [Language.zhCN]: (v: string) => `激活 ${v}`
     },
     connectTo: {
         [Language.en]: (v: string) => `Connect to: ${v}`,

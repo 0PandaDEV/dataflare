@@ -10,10 +10,9 @@ import {
     DropdownMenuSeparator
 } from '../../ui'
 import { readSelectedFile, writeFileToSelectPath } from '../../utils/fs'
-import { useCheckCreateConnection, useConnections } from './hooks'
+import { useConnections } from './hooks'
 
 export const ConnectionMenuActions = () => {
-    const checker = useCheckCreateConnection()
     const { data, mutate } = useConnections()
     const connections = data ?? []
 
@@ -31,7 +30,7 @@ export const ConnectionMenuActions = () => {
             <DropdownMenuLabel label={t('connection')} />
             <DropdownMenuItem
                 onClick={() => {
-                    importConnections(checker).finally(() => mutate())
+                    importConnections().finally(() => mutate())
                 }}
             >
                 {t('import')}
@@ -54,9 +53,7 @@ interface ExportedFileFormat {
 const filters = [{ name: 'JSON', extensions: ['json'] }]
 const version = 1
 
-type Checker = ReturnType<typeof useCheckCreateConnection>
-
-const importConnections = async (checker: Checker) => {
+const importConnections = async () => {
     let content = await readSelectedFile('text', { filters })
     if (content === null) {
         return
@@ -66,10 +63,8 @@ const importConnections = async (checker: Checker) => {
         if (json.version !== version) {
             throw `Unsupported file format version`
         }
-        if (checker(json.connections.length)) {
-            for (let item of json.connections) {
-                await ClientData.createConnection(item.name, item.config)
-            }
+        for (let item of json.connections) {
+            await ClientData.createConnection(item.name, item.config)
         }
     } catch (err: any) {
         showMessageBox(t('error'), err.toString(), 'error')

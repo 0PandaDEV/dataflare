@@ -43,7 +43,6 @@ export const TauriGlobalEvent = new GlobalEventImpl()
 export const REFRESH_CONNECTIONS = 'refresh-connections'
 export const REFRESH_EDITOR_FONT_OPTIONS = 'refresh-editor-font-options'
 export const REFRESH_BYTES_FORMAT = 'refresh-bytes-format'
-export const LICENSE_ACTIVATE_SUCCESS = 'license-activate-success'
 export const REFRESH_TRANSLATION = 'refresh-translation'
 export const REFRESH_TRANSFORM_RULES = 'refresh-transform-rules'
 export const REFRESH_AI_MODELS = 'refresh-ai-models'

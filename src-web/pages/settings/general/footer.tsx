@@ -1,4 +1,4 @@
-import { IconBrandGithub, IconBrandX, IconBug, IconKey, IconSpy, IconTelescope } from '@tabler/icons-react'
+import { IconBrandGithub, IconBrandX, IconBug, IconSpy, IconTelescope } from '@tabler/icons-react'
 import { getVersion } from '@tauri-apps/api/app'
 import { ReactNode, useEffect, useState } from 'react'
 import { useTranslation } from '../../../i18n'
@@ -6,7 +6,6 @@ import {
     BUG_FEEDBACK_URL,
     FOLLOW_URL,
     GITHUB_REPOSITORY_URL,
-    LICENSE_MANAGER_URL,
     openURL,
     PRIVACY_POLICY_URL,
     RELEASE_URL
@@ -34,11 +33,6 @@ export const Footer = () => {
                     name={t('bugAndFeature')}
                     link={BUG_FEEDBACK_URL}
                     icon={<IconBug size={16} stroke={1.6} />}
-                />
-                <Item
-                    name={t('licenseManager')}
-                    link={LICENSE_MANAGER_URL}
-                    icon={<IconKey size={16} stroke={1.6} />}
                 />
                 <Item
                     name='GitHub'

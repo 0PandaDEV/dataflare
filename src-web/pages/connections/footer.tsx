@@ -6,7 +6,7 @@ import { useSuccess } from '../../hooks/use-success'
 import { t } from '../../i18n'
 import { ClientData, Connection, newDatabaseWindow, Database } from '../../tauri'
 import { Button } from '../../ui'
-import { useCheckCreateConnection, useConnections } from './hooks'
+import { useConnections } from './hooks'
 
 export const ConnectionFooter = ({
     conn,
@@ -19,7 +19,6 @@ export const ConnectionFooter = ({
     const lastTestID = useRef(0)
     const [saveSuccess, setSaveSuccess] = useSuccess()
     const showMessageBox = useAlertMessage()
-    const checker = useCheckCreateConnection()
 
     const {
         isMutating: loading,
@@ -55,9 +54,6 @@ export const ConnectionFooter = ({
 
     const onSave = async (saveSuccessCallback?: () => void) => {
         const isCreate = (connections ?? []).every((item) => item.cid !== conn.cid)
-        if (isCreate && !checker(1)) {
-            throw ''
-        }
         try {
             if (isCreate) {
                 conn.cid = await ClientData.createConnection(conn.name, conn.config)

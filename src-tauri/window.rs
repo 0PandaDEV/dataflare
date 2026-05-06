@@ -115,39 +115,6 @@ pub async fn show_settings_window(app: AppHandle, tab: Option<String>) -> Result
     builder.build().map(|_| ()).map_err(|err| err.to_string())
 }
 
-pub const ACTIVATE_WINDOW: &str = "activate";
-#[command]
-pub async fn show_activate_window(app: AppHandle) -> Result<(), String> {
-    if try_show_window(&app, ACTIVATE_WINDOW) {
-        return Ok(());
-    }
-    let mut builder = WebviewWindowBuilder::new(
-        &app,
-        ACTIVATE_WINDOW,
-        WebviewUrl::App("activate.html".into()),
-    )
-    .title("Dataflare")
-    .inner_size(640., 500.)
-    .min_inner_size(640., 500.)
-    .maximizable(false)
-    .minimizable(false)
-    .visible(false)
-    .decorations(DECORATION)
-    .disable_drag_drop_handler()
-    .enable_clipboard_access()
-    .use_https_scheme(true);
-    #[cfg(target_os = "macos")]
-    {
-        builder = builder
-            .title_bar_style(tauri::TitleBarStyle::Overlay)
-            .hidden_title(true);
-    }
-    if let Some(state) = app.state::<WindowStateManager>().get(ACTIVATE_WINDOW) {
-        builder = state.restore(builder);
-    }
-    builder.build().map(|_| ()).map_err(|err| err.to_string())
-}
-
 pub const BACKUP_WINDOW: &str = "backup";
 #[command]
 pub async fn show_backup_window(
