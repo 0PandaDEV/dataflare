@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - v*.*.*
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Tag to release (e.g. v3.0.0)
+        required: true
+        type: string
 
 jobs:
   build:
@@ -51,6 +57,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.tag || github.ref }}
 
       # TODO: Cache cargo, pnpm
       # Because each release uses a new tag, the cache can’t be hit.
