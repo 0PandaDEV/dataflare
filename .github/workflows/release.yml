@@ -56,15 +56,13 @@ jobs:
       # Because each release uses a new tag, the cache can’t be hit.
       # https://docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching#restrictions-for-accessing-a-cache
 
-      - name: Setup Node
-        uses: actions/setup-node@v6
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          node-version-file: package.json
+          bun-version: latest
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v5
-        with:
-          run_install: true
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -95,7 +93,7 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
         run: |
-          pnpm build --target ${{ matrix.job.target }}
+          bun run build --target ${{ matrix.job.target }}
 
       - name: Organize App files (macOS)
         if: runner.os == 'macOS'
