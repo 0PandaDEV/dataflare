@@ -17,7 +17,6 @@
         "fs:read-all",
         "fs:write-all",
         "process:default",
-        "updater:default",
         "clipboard-manager:allow-read-text",
         "clipboard-manager:allow-write-text",
         "opener:allow-open-url",

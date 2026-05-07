@@ -47,8 +47,7 @@
       "nsis": {
         "installerIcon": "icons/icon.ico"
       }
-    },
-    "createUpdaterArtifacts": "v1Compatible"
+    }
   },
   "app": {
     "security": {

@@ -1,6 +1,6 @@
 import { IconX, IconTableOptions } from '@tabler/icons-react'
 import { Reorder } from 'framer-motion'
-import { useEffect } from 'react'
+import { useEffect, type PointerEvent } from 'react'
 import { useTranslation } from '../../../i18n'
 import { showContextMenu } from '../../../tauri'
 import { IconButton, Tooltip } from '../../../ui'
@@ -83,7 +83,7 @@ export const Tabs = () => {
                                 data-actived={actived}
                                 className='group relative flex h-full items-center gap-1 border-r border-separator bg-zinc-100 pl-[10px] pr-2 text-tertiary after:absolute after:inset-x-0 after:bottom-0 after:z-10 after:h-px data-[actived]:bg-main data-[actived]:text-primary data-[actived]:after:bg-main dark:bg-zinc-900'
                                 onContextMenu={() => onContextMenu(item)}
-                                onPointerDown={(e: MouseEvent) => {
+                                onPointerDown={(e: PointerEvent<HTMLLIElement>) => {
                                     e.button === 1 ? closeTab(item) : setActiveTab(item)
                                 }}
                             >
