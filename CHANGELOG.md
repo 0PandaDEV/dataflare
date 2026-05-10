@@ -1,3 +1,12 @@
+## v3.0.1
+
+**Published:** `2026-05-09T17:00:00Z`
+
+**Changes**
+
+- Add the Japanese translations. **Contributor**: @cwatanab
+- Fix Turso cipher options toggle
+
 ## v3.0.0
 
 **Published:** `2026-05-06T16:00:00Z`
