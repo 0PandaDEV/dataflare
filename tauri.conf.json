@@ -11,7 +11,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["app", "dmg", "appimage", "nsis"],
+    "targets": ["app", "dmg", "deb", "nsis"],
     "category": "DeveloperTool",
     "copyright": "Copyright © 2026 Dataflare.",
     "shortDescription": "",
@@ -37,11 +37,7 @@
         "description": "DuckDB file"
       }
     ],
-    "macOS": {
-      "providerShortName": null,
-      "signingIdentity": null,
-      "entitlements": "./entitlements.plist"
-    },
+    "macOS": {},
     "windows": {
       "digestAlgorithm": "sha256",
       "nsis": {

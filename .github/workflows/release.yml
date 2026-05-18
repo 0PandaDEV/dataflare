@@ -67,7 +67,7 @@ jobs:
           bun-version: latest
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: bun install
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -90,6 +90,12 @@ jobs:
       - name: Build App
         run: |
           bun run build --target ${{ matrix.job.target }}
+        env:
+          APPLE_SIGNING_IDENTITY: ''
+          APPLE_CERTIFICATE: ''
+          APPLE_ID: ''
+          APPLE_PASSWORD: ''
+          APPLE_TEAM_ID: ''
 
       - name: Stage artifacts (macOS)
         if: runner.os == 'macOS'
@@ -110,8 +116,7 @@ jobs:
           BUNDLE_DIR: target/${{ matrix.job.target }}/release/bundle
         run: |
           mkdir -p dist
-          mv "$BUNDLE_DIR/appimage/Dataflare_${{ env.APP_VERSION }}_${{ matrix.job.arch }}.AppImage" "dist/$PREFIX.AppImage"
-          mv "$BUNDLE_DIR/appimage/Dataflare_${{ env.APP_VERSION }}_${{ matrix.job.arch }}.AppImage.tar.gz" "dist/$PREFIX.AppImage.tar.gz"
+          mv "$BUNDLE_DIR/deb/"*.deb "dist/$PREFIX.deb"
 
       - name: Stage artifacts (Windows)
         if: runner.os == 'Windows'
