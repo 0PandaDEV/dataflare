@@ -49,6 +49,7 @@ pub enum LogicalType {
     TimestampTz,
     BigNum,
     TimeNs,
+    Geometry,
 }
 
 #[derive(Clone, PartialEq, Eq)]
@@ -219,12 +220,25 @@ impl LogicalType {
                 ffi::DUCKDB_TYPE_DUCKDB_TYPE_BIT => Self::Bit,
                 ffi::DUCKDB_TYPE_DUCKDB_TYPE_TIME_TZ => Self::TimeTz,
                 ffi::DUCKDB_TYPE_DUCKDB_TYPE_TIMESTAMP_TZ => Self::TimestampTz,
-                // ffi::DUCKDB_TYPE_DUCKDB_TYPE_ANY
+                ffi::DUCKDB_TYPE_DUCKDB_TYPE_ANY => {
+                    return Err(Error::UnsupportedType(type_id, "ANY"));
+                }
                 ffi::DUCKDB_TYPE_DUCKDB_TYPE_BIGNUM => Self::BigNum,
-                // ffi::DUCKDB_TYPE_DUCKDB_TYPE_SQLNULL
-                // ffi::DUCKDB_TYPE_DUCKDB_TYPE_STRING_LITERAL
-                // ffi::DUCKDB_TYPE_DUCKDB_TYPE_INTEGER_LITERAL
+                ffi::DUCKDB_TYPE_DUCKDB_TYPE_SQLNULL => {
+                    return Err(Error::UnsupportedType(type_id, "SQLNULL"));
+                }
+                ffi::DUCKDB_TYPE_DUCKDB_TYPE_STRING_LITERAL => {
+                    return Err(Error::UnsupportedType(type_id, "STRING_LITERAL"));
+                }
+                ffi::DUCKDB_TYPE_DUCKDB_TYPE_INTEGER_LITERAL => {
+                    return Err(Error::UnsupportedType(type_id, "INTEGER_LITERAL"));
+                }
                 ffi::DUCKDB_TYPE_DUCKDB_TYPE_TIME_NS => Self::TimeNs,
+                ffi::DUCKDB_TYPE_DUCKDB_TYPE_GEOMETRY => Self::Geometry,
+                ffi::DUCKDB_TYPE_DUCKDB_TYPE_VARIANT => {
+                    // TODO: https://github.com/duckdb/duckdb-rs/blob/035601f0a77230faa32f911019c1de3e2502670e/crates/duckdb/src/core/logical_type.rs#L96-L98
+                    return Err(Error::UnsupportedType(type_id, "VARIANT"));
+                }
                 id => return Err(Error::UnknownTypeId(id)),
             };
             Ok(t)
@@ -326,6 +340,7 @@ impl Display for LogicalType {
             Self::TimestampTz => write!(f, "timestamptz"),
             Self::BigNum => write!(f, "bignum"),
             Self::TimeNs => write!(f, "time_ns"),
+            Self::Geometry => write!(f, "geometry"),
         }
     }
 }

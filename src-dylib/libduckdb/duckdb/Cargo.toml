@@ -14,3 +14,4 @@ libduckdb-sys = { version = "1.10503.0", default-features = false, features = [
 rust_decimal = { version = "1.38.0", default-features = false, features = [
     "std",
 ] }
+geozero = { version = "0.15.1", default-features = false, features = ["with-wkb"] }

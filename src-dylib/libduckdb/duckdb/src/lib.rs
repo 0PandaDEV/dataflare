@@ -26,6 +26,8 @@ pub enum Error {
     Config,
     #[error("Unknown type id '{0}'")]
     UnknownTypeId(u32),
+    #[error("Unsupported type '{1}' with id '{0}'")]
+    UnsupportedType(u32, &'static str),
     #[error("Invalid internal enum type id '{0}'")]
     InternalEnumTypeId(u32),
     #[error("{0}")]

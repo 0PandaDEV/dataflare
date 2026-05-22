@@ -1225,7 +1225,8 @@ export class VirtualTable {
                 case 'varint':
                 case 'ipaddress':
                 case 'bignum':
-                case 'numeric': {
+                case 'numeric':
+                case 'geometry': {
                     this.monospace = true
                     return {
                         text: this.measureText(value, maxWidth),
@@ -1298,7 +1299,8 @@ export class VirtualTable {
                 case 'varint':
                 case 'ipaddress':
                 case 'bignum':
-                case 'numeric': {
+                case 'numeric':
+                case 'geometry': {
                     this.monospace = true
                     return measureWidth(value)
                 }

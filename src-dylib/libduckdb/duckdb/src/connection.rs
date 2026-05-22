@@ -418,4 +418,55 @@ mod tests {
         assert_eq!(query.columns.len(), 2);
         assert_eq!(query.rows.len(), 3);
     }
+
+    #[test]
+    fn test_geometry() {
+        let query = Database::open_with_memory(Config::new())
+            .unwrap()
+            .connect()
+            .unwrap()
+            .query(
+                r#"
+                SELECT
+                'POINT(0 1)'::GEOMETRY,
+                'LINESTRING(0 1, 2 3)'::GEOMETRY,
+                'POLYGON((0 0, 0 1, 1 1, 0 0))'::GEOMETRY,
+                'MULTIPOINT((0 1), (2 3))'::GEOMETRY,
+                'MULTILINESTRING((0 1, 2 3), (4 5, 6 7))'::GEOMETRY,
+                'MULTIPOLYGON(((0 0, 0 1, 1 1, 0 0)), ((10 10, 10 11, 11 11, 10 10)))'::GEOMETRY,
+                'GEOMETRYCOLLECTION(POINT(0 1),
+                LINESTRING(2 3, 4 5))'::GEOMETRY
+            "#,
+            )
+            .unwrap();
+        assert_eq!(query.columns.len(), 7);
+        assert_eq!(query.rows.len(), 1);
+        let values = query.rows[0]
+            .iter()
+            .map(|v| v.to_string())
+            .collect::<Vec<_>>();
+        assert_eq!(
+            values,
+            vec![
+                "POINT(0 1)",
+                "LINESTRING(0 1,2 3)",
+                "POLYGON((0 0,0 1,1 1,0 0))",
+                "MULTIPOINT(0 1,2 3)",
+                "MULTILINESTRING((0 1,2 3),(4 5,6 7))",
+                "MULTIPOLYGON(((0 0,0 1,1 1,0 0)),((10 10,10 11,11 11,10 10)))",
+                "GEOMETRYCOLLECTION(POINT(0 1),LINESTRING(2 3,4 5))",
+            ]
+        );
+    }
+
+    #[test]
+    fn test_unsupported_variant_type() {
+        let err = Database::open_with_memory(Config::new())
+            .unwrap()
+            .connect()
+            .unwrap()
+            .query("SELECT 1::VARIANT")
+            .unwrap_err();
+        assert!(matches!(err, Error::UnsupportedType(..)));
+    }
 }
