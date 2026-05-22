@@ -1,3 +1,13 @@
+## v3.0.3
+
+**Published:** `2026-05-22T13:30:00Z`
+
+**Changes**
+
+- Upgrade DuckDB to v1.5.3
+- Add support for DuckDB geometry type
+- Upgrade @base-ui/react to version 1.5.0
+
 ## v3.0.2
 
 **Published:** `2026-05-16T11:30:00Z`
