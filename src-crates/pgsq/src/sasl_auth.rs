@@ -6,7 +6,7 @@ use pgwire::messages::startup::{
     Authentication, PasswordMessageFamily, SASLInitialResponse, SASLResponse,
 };
 use pgwire::messages::{PgWireBackendMessage, PgWireFrontendMessage};
-use rand::{Rng, rng};
+use rand::{RngExt, rng};
 use sha2::{Digest, Sha256};
 use stringprep::saslprep;
 
