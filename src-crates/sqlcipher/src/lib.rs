@@ -11,19 +11,19 @@ use std::{ffi::c_void, sync::Mutex, time::Instant};
 // Do not update manually
 // Use `node ./src-dylib/driver-update.mjs` update the sha256 values.
 
-const SQLCIPHER_DRIVER_VERSION: &str = "20260506";
+const SQLCIPHER_DRIVER_VERSION: &str = "20260528";
 #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
-const SQLCIPHER_SHA256: &str = "f5445d0fdc6703c8734fe9846ddc8a63de21b8f7d8d4862388f72b67886150c0";
+const SQLCIPHER_SHA256: &str = "521a4c0d765cfaad4fc76dd843297af71953d2a29a3c9b070895d50fd3c08cd0";
 #[cfg(all(target_os = "macos", target_arch = "x86_64"))]
-const SQLCIPHER_SHA256: &str = "2169d88c9ef73de97a5a12fa61424d62d38d18a0e495513f9fab210f408cc2c1";
+const SQLCIPHER_SHA256: &str = "7a3c9d74da2b59472bdcaed0b6a9d92a1d18552c0654e1cd4ed3ce7b963281ae";
 #[cfg(all(target_os = "linux", target_arch = "aarch64", target_env = "gnu"))]
-const SQLCIPHER_SHA256: &str = "7c3b2353088c2c4ec292cb1268e1846660cd2c9e6a05dfbb9779763b95b72010";
+const SQLCIPHER_SHA256: &str = "7b5c9bccd2b9d70415afff0554e48fb23e59e44a79d6463f7d410c5dc50236e8";
 #[cfg(all(target_os = "linux", target_arch = "x86_64", target_env = "gnu"))]
-const SQLCIPHER_SHA256: &str = "b990517a87263cba8332e8be3a758f49eb49ba504d4fc0c27f991f80579e8d20";
+const SQLCIPHER_SHA256: &str = "bcc31c61cbab06a951db57511c018d3a47b7918b15931bf9a70eac8e04e7de6e";
 #[cfg(all(target_os = "windows", target_arch = "aarch64", target_env = "msvc"))]
-const SQLCIPHER_SHA256: &str = "aa1d48d8f7507de34b742a6055042360af8adf9388b00827bc6efdb4031b2cb6";
+const SQLCIPHER_SHA256: &str = "5de0958b36803127897f79af1341b94207d4c4fa6a1465b9e224963f8f84f5be";
 #[cfg(all(target_os = "windows", target_arch = "x86_64", target_env = "msvc"))]
-const SQLCIPHER_SHA256: &str = "e69d6d4df9271d5d99000c18a2ce81cb10e43ee716dcce13b9133ada33096121";
+const SQLCIPHER_SHA256: &str = "470bee900a657f7a7732654b9a1138924c028452e6dfc34deea25b2ac8160042";
 
 #[derive(Debug)]
 pub struct Connection {
