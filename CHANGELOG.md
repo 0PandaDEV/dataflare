@@ -1,3 +1,13 @@
+## v3.0.5
+
+**Published:** `2026-05-28T09:30:00Z`
+
+**Changes**
+
+- Upgrade russh/echolite version to latest
+- Upgrade SQLCipher to v4.14.0
+- Upgrade SQLite to v3.53.1
+
 ## v3.0.4
 
 **Published:** `2026-05-25T15:00:00Z`
