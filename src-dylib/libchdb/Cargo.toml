@@ -1,0 +1,20 @@
+[workspace]
+
+[package]
+name = "libchdb"
+edition = "2024"
+
+[lib]
+name = "chdb"
+crate-type = ["cdylib"]
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = "symbols"
+
+[dependencies]
+chdb-rust = { git = "https://github.com/chdb-io/chdb-rust", rev = "f72c412c34b140f44ad75b9d0c06b047080adceb", features = ["static"] }
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = { version = "1.0.150", features = ["float_roundtrip"] }
+thiserror = "2.0.18"

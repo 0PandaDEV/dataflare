@@ -1,14 +1,15 @@
 import crypto from 'crypto'
 
-// The drivers for SQLCipher, LibSQL, Turso and DuckDB are dynamically loaded
+// The drivers for SQLCipher, LibSQL, Turso, DuckDB and chDB are dynamically loaded
 // This script extracts the sha256 values for the corresponding platform
 // src-crates/sqlcipher/src/lib.rs
 // src-crates/libsql-local/src/lib.rs
 // src-crates/turso-local/src/lib.rs
 // src-crates/duckdb/src/lib.rs
+// src-crates/chdb/src/lib.rs
 
-const name = 'turso'
-const version = '20260517'
+const name = 'chdb'
+const version = '20260603'
 
 const base = 'https://assets.dataflare.app/drivers/'
 const items = [
@@ -53,16 +54,26 @@ const items = [
 const sha256 = async ({ prefix, target, suffix, cfg }) => {
     const url = `${base}${prefix}${name}-${target}-${version}.${suffix}`
     const res = await fetch(url)
-    if (res.status !== 200) {
-        throw new Error(`HTTP Error: ${res.status}, ${url}`)
+    let hex = ''
+    switch (res.status) {
+        case 200: {
+            const buffer = new Uint8Array(await res.arrayBuffer())
+            const hash = crypto.createHash('sha256')
+            hash.update(buffer)
+            hex = `"${hash.digest('hex')}";`
+            break
+        }
+        case 404: {
+            hex = '""; // Unsupported platform'
+            break
+        }
+        default: {
+            throw new Error(`HTTP Error: ${res.status}, ${url}`)
+        }
     }
-    const buffer = new Uint8Array(await res.arrayBuffer())
-    const hash = crypto.createHash('sha256')
-    hash.update(buffer)
-    const hex = hash.digest('hex')
     return `
 #[cfg(all(${cfg}))]
-const ${name.toUpperCase()}_SHA256: &str = "${hex}";
+const ${name.toUpperCase()}_SHA256: &str = ${hex}
     `.trim()
 }
 
