@@ -56,7 +56,6 @@ impl ChDbConnection {
         Ok(query)
     }
 
-    // TODO
     pub(crate) async fn batch_insert(&self, insert: ChunkInsert) -> Result<()> {
         for sql in insert {
             self.conn.execute(&sql)?;
