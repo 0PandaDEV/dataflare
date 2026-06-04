@@ -1,6 +1,6 @@
 //! # Secret Resolver Library
 //!
-//! This library provides a secure mechanism for resolving secrets from multiple sources:
+//! This library provides a mechanism for resolving secrets from multiple sources.
 //! - **`env:`** - Resolves environment variables or keys from `.env` files
 //! - **`file:`** - Reads secrets from local files
 //! - **`exec:`** - Executes shell commands to retrieve secrets
@@ -318,6 +318,7 @@ mod tests {
         assert!(matches!(result, Err(Error::CommandNonZeroExit { .. })));
     }
 
+    #[cfg(not(target_os = "windows"))]
     #[tokio::test]
     async fn test_resolve_exec_no_output() {
         let result = Secret::resolve("exec: sleep 1").await;
