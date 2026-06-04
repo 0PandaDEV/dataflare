@@ -1,7 +1,7 @@
 mod chars;
 mod value;
 
-use rand::{Rng, rng};
+use rand::{RngExt, rng};
 use serde::Deserialize;
 pub use value::{InsertValue, IpType};
 

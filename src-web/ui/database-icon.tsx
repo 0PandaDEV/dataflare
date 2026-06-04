@@ -1,4 +1,4 @@
-import { IconBrandCloudflare, IconBrandMysql, IconLock } from '@tabler/icons-react'
+import { IconBlobFilled, IconBrandCloudflare, IconBrandMysql, IconLock } from '@tabler/icons-react'
 import { SVGProps } from 'react'
 import { DatabaseType, KvDatabaseType, SqlDatabaseType } from '../tauri'
 
@@ -108,6 +108,16 @@ export const ConnectionIcon = ({
                     className='size-4 min-w-4 fill-primary data-[selected]:fill-white'
                 />
             )
+        case SqlDatabaseType.ChDb: {
+            // TODO: Use the actual chDB icon
+            // This icon is too complex: https://clickhouse.com/images/nav/icon-chdb.svg
+            return (
+                <IconBlobFilled
+                    data-selected={isSelected || undefined}
+                    className='size-4 min-w-4 fill-primary data-[selected]:fill-white'
+                />
+            )
+        }
         case SqlDatabaseType.Databend: {
             return (
                 <DatabendIcon

@@ -32,6 +32,7 @@ pub enum Value {
     Uuid(Uuid),
     Text(String),
     Blob(Vec<u8>),
+    Geometry(String),
     Enum(EnumValue),
     List(Vec<Self>),
     Map(Vec<(Self, Self)>),
@@ -109,6 +110,7 @@ impl Display for Value {
             }
             Self::Union(_, val) => write!(f, "{val}"),
             Self::BigNum(v) => write!(f, "{v}"),
+            Self::Geometry(v) => write!(f, "{v}"),
         }
     }
 }

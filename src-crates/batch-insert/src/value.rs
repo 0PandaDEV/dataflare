@@ -1,7 +1,7 @@
 use crate::chars::{LETTER, NUMBER_LETTER, TLDS};
 use rand::distr::{Alphanumeric, SampleString};
 use rand::prelude::IndexedRandom;
-use rand::{Rng, rng};
+use rand::{RngExt, rng};
 use serde::Deserialize;
 use std::borrow::Cow;
 use std::net::{Ipv4Addr, Ipv6Addr};
@@ -130,11 +130,9 @@ fn random_unix_timestamp(ms: bool) -> String {
 fn random_email() -> String {
     let mut rng = rng();
     let len = rng.random_range(1..=16);
-    let prefix = NUMBER_LETTER
-        .choose_multiple(&mut rng, len)
-        .collect::<String>();
+    let prefix = NUMBER_LETTER.sample(&mut rng, len).collect::<String>();
     let len = rng.random_range(1..=8);
-    let name = LETTER.choose_multiple(&mut rng, len).collect::<String>();
+    let name = LETTER.sample(&mut rng, len).collect::<String>();
     let tld = TLDS.choose(&mut rng).unwrap();
     format!("'{prefix}@{name}.{tld}'")
 }

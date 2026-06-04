@@ -86,7 +86,8 @@ impl SshProxyConfig {
                 };
                 let mut cache: Option<Option<HashAlg>> = None;
                 for identity in identities {
-                    let hash = match identity.algorithm() {
+                    let public_key = identity.public_key();
+                    let hash = match public_key.algorithm() {
                         Algorithm::Rsa { .. } => match cache {
                             Some(cached) => cached,
                             None => {
@@ -102,7 +103,12 @@ impl SshProxyConfig {
                         _ => None,
                     };
                     auth_rst = session
-                        .authenticate_publickey_with(&self.user, identity, hash, &mut agent)
+                        .authenticate_publickey_with(
+                            &self.user,
+                            public_key.into_owned(),
+                            hash,
+                            &mut agent,
+                        )
                         .await?;
                     if auth_rst.success() {
                         break;

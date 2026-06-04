@@ -39,6 +39,7 @@ Please visit Dataflare website to download: https://dataflare.app/download
 
 - [Amazon S3](https://aws.amazon.com/s3/)
 - [BigQuery](https://cloud.google.com/bigquery)
+- [chDB](https://github.com/chdb-io)
 - [ClickHouse](https://github.com/ClickHouse/ClickHouse)
 - [Cloudflare D1](https://developers.cloudflare.com/d1/)
 - [Cloudflare R2](https://developers.cloudflare.com/r2/)

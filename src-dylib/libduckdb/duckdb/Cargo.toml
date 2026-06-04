@@ -8,9 +8,10 @@ chrono = "0.4.42"
 thiserror = "2.0.16"
 uuid = "1.18.1"
 num-bigint = "0.4.6"
-libduckdb-sys = { version = "1.10502.0", default-features = false, features = [
+libduckdb-sys = { version = "1.10503.0", default-features = false, features = [
     "bundled",
 ] }
 rust_decimal = { version = "1.38.0", default-features = false, features = [
     "std",
 ] }
+geozero = { version = "0.15.1", default-features = false, features = ["with-wkb"] }

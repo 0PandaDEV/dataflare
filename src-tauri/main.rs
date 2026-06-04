@@ -7,7 +7,6 @@ mod backup;
 mod client;
 mod database;
 mod device;
-mod http;
 mod ipc;
 mod keychain;
 mod lifecycle;
@@ -42,6 +41,7 @@ fn main() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_clipboard_manager::init());
     
@@ -57,8 +57,6 @@ fn main() {
         // Device
         device::hostname,
         device::font_families,
-        // HTTP
-        http::fetch,
         // Keychain
         keychain::set_password,
         keychain::get_password,

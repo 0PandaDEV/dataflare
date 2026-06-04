@@ -1,6 +1,7 @@
 use crate::{Interval, LogicalType, Value, column::EnumValueType};
 use bit_vec::BitVec;
 use chrono::{DateTime, Duration, NaiveDate, NaiveTime};
+use geozero::{ToWkt, wkb::Wkb};
 use libduckdb_sys as ffi;
 use num_bigint::BigInt;
 use rust_decimal::Decimal;
@@ -251,6 +252,10 @@ pub(crate) unsafe fn from_vector(
             }
             LogicalType::BigNum => vector_bytes(ptr, validity, len, |bytes| {
                 Value::BigNum(parse_bignum(bytes))
+            }),
+            LogicalType::Geometry => vector_bytes(ptr, validity, len, |bytes| {
+                // Safe because DuckDB guarantees the bytes are valid WKB
+                Value::Geometry(Wkb(bytes).to_wkt().unwrap_or_default())
             }),
         }
     }

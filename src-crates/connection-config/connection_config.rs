@@ -1,5 +1,6 @@
 use pgsq::TlsMode;
 use proxy::ProxyConfig;
+use secret_resolve::Secret;
 use serde::{Deserialize, Serialize};
 use strum::{EnumProperty, IntoStaticStr};
 
@@ -18,6 +19,9 @@ pub enum ConnectionConfig {
     ManticoreSearch(ManticoreSearchConfig),
     MSSQL(MsSqlConfig),
     ClickHouse(ClickHouseConfig),
+    #[serde(rename = "chDB")]
+    #[strum(serialize = "chDB")]
+    ChDb(ChDbConfig),
     Databend(DatabendConfig),
     BigQuery(BigQueryConfig),
     Trino(TrinoConfig),
@@ -58,6 +62,117 @@ impl ConnectionConfig {
     pub fn is_kv(&self) -> bool {
         self.get_str("kv").is_some()
     }
+
+    pub async fn secret_resolve(mut self) -> Result<Self, secret_resolve::Error> {
+        match &mut self {
+            ConnectionConfig::SQLite(_) => {}
+            ConnectionConfig::SQLCipher(config) => {
+                config.key = Secret::resolve(&config.key).await?;
+            }
+            ConnectionConfig::PostgreSQL(config) | ConnectionConfig::CockroachDB(config) => {
+                config.password = Secret::resolve(&config.password).await?;
+                ProxyConfig::secret_resolve(&mut config.proxy).await?;
+            }
+            ConnectionConfig::QuestDB(config) => {
+                config.password = Secret::resolve(&config.password).await?;
+                ProxyConfig::secret_resolve(&mut config.proxy).await?;
+            }
+            ConnectionConfig::MySQL(config) | ConnectionConfig::MariaDB(config) => {
+                config.password = Secret::resolve_option(config.password.take()).await?;
+                ProxyConfig::secret_resolve(&mut config.proxy).await?;
+            }
+            ConnectionConfig::ManticoreSearch(config) => {
+                ProxyConfig::secret_resolve(&mut config.proxy).await?;
+            }
+            ConnectionConfig::MSSQL(config) => {
+                if let MsSqlAuthConfig::SqlServer { password, .. } = &mut config.auth {
+                    *password = Secret::resolve(&password).await?;
+                }
+            }
+            ConnectionConfig::ClickHouse(config) => {
+                config.password = Secret::resolve(&config.password).await?;
+                ProxyConfig::secret_resolve(&mut config.proxy).await?;
+            }
+            ConnectionConfig::ChDb(_) => {}
+            ConnectionConfig::Databend(config) => {
+                config.password = Secret::resolve(&config.password).await?;
+                ProxyConfig::secret_resolve(&mut config.proxy).await?;
+            }
+            ConnectionConfig::BigQuery(config) => {
+                let BigQueryAuth::JsonKey { content } = &mut config.auth;
+                *content = Secret::resolve_option(content.take()).await?;
+            }
+            ConnectionConfig::Trino(config) => {
+                match &mut config.auth {
+                    TrinoAuth::Password { password } => {
+                        *password = Secret::resolve(&password).await?;
+                    }
+                    TrinoAuth::Jwt { token } => {
+                        *token = Secret::resolve(&token).await?;
+                    }
+                    TrinoAuth::None => {}
+                }
+                ProxyConfig::secret_resolve(&mut config.proxy).await?;
+            }
+            ConnectionConfig::Presto(config) => {
+                match &mut config.auth {
+                    PrestoAuth::Password { password } => {
+                        *password = Secret::resolve(&password).await?;
+                    }
+                    PrestoAuth::Jwt { token } => {
+                        *token = Secret::resolve(&token).await?;
+                    }
+                    PrestoAuth::None => {}
+                }
+                ProxyConfig::secret_resolve(&mut config.proxy).await?;
+            }
+            ConnectionConfig::Databricks(config) => {
+                let DatabricksAuth::Token { token } = &mut config.auth;
+                *token = Secret::resolve(&token).await?;
+                ProxyConfig::secret_resolve(&mut config.proxy).await?;
+            }
+            ConnectionConfig::DuckDB(_) => {}
+            ConnectionConfig::Turso(config) => match &mut config.database {
+                TursoDatabaseConfig::Remote { token, .. } => {
+                    *token = Secret::resolve(&token).await?;
+                }
+                TursoDatabaseConfig::Turso { encryption, .. } => {
+                    if let Some(TursoEncryptionConfig { key, .. }) = encryption {
+                        *key = Secret::resolve(&key).await?;
+                    }
+                }
+                _ => {}
+            },
+            ConnectionConfig::Rqlite(config) => {
+                config.password = Secret::resolve_option(config.password.take()).await?;
+                ProxyConfig::secret_resolve(&mut config.proxy).await?;
+            }
+            ConnectionConfig::EchoLite(config) => {
+                config.password = Secret::resolve(&config.password).await?;
+                ProxyConfig::secret_resolve(&mut config.proxy).await?;
+            }
+            ConnectionConfig::CloudflareD1(config) => {
+                config.api_token = Secret::resolve(&config.api_token).await?;
+            }
+            ConnectionConfig::WorkersAnalyticsEngine(config) => {
+                config.api_token = Secret::resolve(&config.api_token).await?;
+            }
+            ConnectionConfig::R2Sql(config) => {
+                config.api_token = Secret::resolve(&config.api_token).await?;
+            }
+            ConnectionConfig::CloudflareKv(config) => {
+                config.api_token = Secret::resolve(&config.api_token).await?;
+            }
+            ConnectionConfig::Redis(config) => {
+                config.password = Secret::resolve_option(config.password.take()).await?;
+                ProxyConfig::secret_resolve(&mut config.proxy).await?;
+            }
+            ConnectionConfig::S3(config) => {
+                config.secret_key = Secret::resolve(&config.secret_key).await?;
+            }
+        }
+        Ok(self)
+    }
 }
 
 // Must be consistent with the types in ConnectionConfig, but only for SQL databases
@@ -74,6 +189,8 @@ pub enum SqlDatabaseType {
     ManticoreSearch,
     MSSQL,
     ClickHouse,
+    #[serde(rename = "chDB")]
+    ChDb,
     Databend,
     BigQuery,
     Trino,
@@ -115,6 +232,13 @@ pub struct ClickHouseConfig {
     pub database: String,
     pub readonly: bool,
     pub proxy: Option<ProxyConfig>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ChDbConfig {
+    pub path: String,
+    pub readonly: bool,
+    pub initial: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

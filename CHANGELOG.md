@@ -1,3 +1,33 @@
+## v3.0.5
+
+**Published:** `2026-05-28T09:30:00Z`
+
+**Changes**
+
+- Upgrade russh/echolite version to latest
+- Upgrade SQLCipher to v4.14.0
+- Upgrade SQLite to v3.53.1
+
+## v3.0.4
+
+**Published:** `2026-05-25T15:00:00Z`
+
+**Changes**
+
+- Replace custom HTTP library with Tauri's HTTP plugin. #185
+- Upgrade Node to v26
+- Upgrade pnpm to v11
+
+## v3.0.3
+
+**Published:** `2026-05-22T13:30:00Z`
+
+**Changes**
+
+- Upgrade DuckDB to v1.5.3
+- Add support for DuckDB geometry type
+- Upgrade @base-ui/react to version 1.5.0
+
 ## v3.0.2
 
 **Published:** `2026-05-16T11:30:00Z`
