@@ -70,10 +70,13 @@ impl Connection {
             conn: Mutex::new(conn),
             dylib,
         };
-        // TODO: Migrate the database field to the dynamic library in the future.
-        let db = database.trim();
-        if !db.is_empty() {
-            conn.execute(&format!("USE {}", db))?;
+        {
+            // TODO: Migrate the database field to the dynamic library in the future.
+            let db = database.trim();
+            if !db.is_empty() {
+                let escaped = db.replace('"', "\"\"");
+                conn.execute(&format!("USE \"{}\"", escaped))?;
+            }
         }
         Ok(conn)
     }
