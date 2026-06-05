@@ -98,10 +98,8 @@ impl ConnectionConfig {
                 config.password = Secret::resolve(&config.password).await?;
                 ProxyConfig::secret_resolve(&mut config.proxy).await?;
             }
-            ConnectionConfig::BigQuery(config) => {
-                let BigQueryAuth::JsonKey { content } = &mut config.auth;
-                *content = Secret::resolve_option(content.take()).await?;
-            }
+            // BigQuery JsonKey stores the content of a JSON file; it is a file selector.
+            ConnectionConfig::BigQuery(_) => {}
             ConnectionConfig::Trino(config) => {
                 match &mut config.auth {
                     TrinoAuth::Password { password } => {
