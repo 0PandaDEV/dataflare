@@ -101,7 +101,7 @@ checksum = "9330f8b2ff13f34540b44e946ef35111825727b38d33286ef986142615121801"
 [[package]]
 name = "chdb-rust"
 version = "1.3.1"
-source = "git+https://github.com/chdb-io/chdb-rust?rev=f72c412c34b140f44ad75b9d0c06b047080adceb#f72c412c34b140f44ad75b9d0c06b047080adceb"
+source = "git+https://github.com/wyhaya/chdb-rust?rev=017575150767b0fd707dfd12aa3c56afe2e97a08#017575150767b0fd707dfd12aa3c56afe2e97a08"
 dependencies = [
  "bindgen",
  "flate2",

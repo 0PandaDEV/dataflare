@@ -74,6 +74,7 @@ pub union Data {
 #[repr(C)]
 struct ConnectOptions {
     pub path: StringRef,
+    // TODO: readonly, database
 }
 
 impl ConnectOptions {
