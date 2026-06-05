@@ -55,7 +55,9 @@ pub enum Error {
     CommandTimedOut { command: String },
     #[error("Command produced no output: `{command}`")]
     CommandNoOutput { command: String },
-    #[error("Command exited with non-zero status: `{command}`, code: {code:?}, stderr: {stderr}")]
+    #[error(
+        "Command exited with non-zero status: code: `{code:?}`, stderr: `{stderr}`, command: `{command}`"
+    )]
     CommandNonZeroExit {
         command: String,
         code: Option<i32>,
