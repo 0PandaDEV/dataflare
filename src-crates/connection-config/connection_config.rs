@@ -166,6 +166,7 @@ impl ConnectionConfig {
                 ProxyConfig::secret_resolve(&mut config.proxy).await?;
             }
             ConnectionConfig::S3(config) => {
+                config.access_key = Secret::resolve(&config.access_key).await?;
                 config.secret_key = Secret::resolve(&config.secret_key).await?;
             }
         }
