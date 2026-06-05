@@ -2,7 +2,7 @@ use chdb::Connection;
 
 #[tokio::main]
 async fn main() {
-    let conn = Connection::connect(":memory:").await.unwrap();
+    let conn = Connection::connect(":memory:", "").await.unwrap();
 
     conn.execute(
         r"

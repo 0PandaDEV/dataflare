@@ -51,7 +51,7 @@ fn free_error(dylib: &Dylib, error: ErrorMessage) -> Result<Option<Error>, Error
 }
 
 impl Connection {
-    pub async fn connect(path: &str) -> Result<Self> {
+    pub async fn connect(path: &str, database: &str) -> Result<Self> {
         if CHDB_SHA256.is_empty() {
             return Err(Error::Message(
                 "chDB is not supported on the current platform.".into(),
@@ -66,10 +66,16 @@ impl Connection {
         if let Some(err) = free_error(&dylib, error)? {
             return Err(err);
         }
-        Ok(Self {
+        let conn = Self {
             conn: Mutex::new(conn),
             dylib,
-        })
+        };
+        // TODO: Migrate the database field to the dynamic library in the future.
+        let db = database.trim();
+        if !db.is_empty() {
+            conn.execute(&format!("USE {}", db))?;
+        }
+        Ok(conn)
     }
 
     fn close(&self) -> Result<(), Error> {
@@ -155,7 +161,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_query() {
-        let conn = Connection::connect(":memory:").await.unwrap();
+        let conn = Connection::connect(":memory:", "").await.unwrap();
         let mut query = conn.query("select 'hello' as hello").unwrap();
         assert_eq!(query.columns.len(), 1);
         assert_eq!(
@@ -176,44 +182,44 @@ mod tests {
 
     #[tokio::test]
     async fn test_multiples_memory() {
-        let _conn1 = Connection::connect(":memory:").await.unwrap();
-        let _conn2 = Connection::connect(":memory:").await.unwrap();
-        let _conn3 = Connection::connect(":memory:").await.unwrap();
+        let _conn1 = Connection::connect(":memory:", "").await.unwrap();
+        let _conn2 = Connection::connect(":memory:", "").await.unwrap();
+        let _conn3 = Connection::connect(":memory:", "").await.unwrap();
     }
 
     #[tokio::test]
     async fn test_multiples_persistent_database() {
-        let _conn1 = Connection::connect("./test-ch1.db").await.unwrap();
-        let conn2 = Connection::connect("./test-ch2.db").await;
+        let _conn1 = Connection::connect("./test-ch1.db", "").await.unwrap();
+        let conn2 = Connection::connect("./test-ch2.db", "").await;
         assert!(conn2.is_err());
     }
 
     #[tokio::test]
     async fn test_memory_database_error() {
-        let file = Connection::connect("./test-ch2.db").await;
+        let file = Connection::connect("./test-ch2.db", "").await;
 
-        let memory = Connection::connect(":memory:").await;
+        let memory = Connection::connect(":memory:", "").await;
         assert!(memory.is_err());
 
         // Drop the file connection and try again.
         drop(file);
 
-        let memory = Connection::connect(":memory:").await;
+        let memory = Connection::connect(":memory:", "").await;
         assert!(memory.is_ok());
     }
 
     #[tokio::test]
     async fn test_persistent_database_error() {
-        let memory = Connection::connect(":memory:").await.unwrap();
+        let memory = Connection::connect(":memory:", "").await.unwrap();
 
         // Persistent connection cannot coexist with in-memory databases.
-        let file = Connection::connect("./test-ch.db").await;
+        let file = Connection::connect("./test-ch.db", "").await;
         assert!(file.is_err());
 
         // Drop the in-memory connection and try again.
         drop(memory);
 
-        let file = Connection::connect("./test-ch.db").await;
+        let file = Connection::connect("./test-ch.db", "").await;
         assert!(file.is_ok());
     }
 }

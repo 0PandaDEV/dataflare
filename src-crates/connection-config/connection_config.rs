@@ -237,6 +237,7 @@ pub struct ClickHouseConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ChDbConfig {
     pub path: String,
+    pub database: String,
     pub readonly: bool,
     pub initial: Option<String>,
 }

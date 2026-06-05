@@ -617,6 +617,13 @@ export const translationText = {
         [Language.zhCN]: `数据库`,
         [Language.ja]: 'データベース'
     },
+    path: {
+        [Language.en]: `Path`,
+        [Language.de]: 'Pfad',
+        [Language.frFR]: `Chemin`,
+        [Language.zhCN]: `路径`,
+        [Language.ja]: 'パス'
+    },
     auth: {
         [Language.en]: `Auth`,
         [Language.de]: 'Authentifizierung',

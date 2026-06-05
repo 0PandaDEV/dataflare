@@ -148,6 +148,7 @@ export interface ChDbConfig {
     type: SqlDatabaseType.ChDb
     options: {
         path: string
+        database: string
         readonly: boolean
         initial: string | null
     }

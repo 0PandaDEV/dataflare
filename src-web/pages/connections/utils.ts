@@ -209,6 +209,7 @@ function defaultConfig(type: DatabaseType): DatabaseConfig {
                 type,
                 options: {
                     path: '',
+                    database: '',
                     readonly: false,
                     initial: null
                 }
@@ -501,6 +502,9 @@ export const toConnectionURL = async (conn: Connection) => {
         case SqlDatabaseType.ChDb: {
             opt.scheme = 'chdb'
             opt.path = config.options.path
+            if (config.options.database !== '') {
+                opt.query['database'] = config.options.database
+            }
             break
         }
         case SqlDatabaseType.Turso: {
@@ -768,6 +772,7 @@ export const parseConnectionURL = async (url: string) => {
             let conn = createConnectionConfig(SqlDatabaseType.ChDb) as Connection<ChDbConfig>
             applyQuery(conn)
             conn.config.options.path = opt.path
+            conn.config.options.database = opt.query['database'] ?? ''
             return conn
         }
         case 'rqlite': {

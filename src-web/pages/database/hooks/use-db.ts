@@ -30,6 +30,7 @@ const defaultSchema = (config: SqlDatabaseConfig): string => {
         case SqlDatabaseType.ManticoreSearch: {
             return 'Manticore'
         }
+        case SqlDatabaseType.ChDb:
         case SqlDatabaseType.ClickHouse:
         case SqlDatabaseType.Databend: {
             return config.options.database === '' ? 'default' : config.options.database
@@ -47,8 +48,7 @@ const defaultSchema = (config: SqlDatabaseConfig): string => {
         case SqlDatabaseType.Databricks: {
             return config.options.schema ?? 'default'
         }
-        case SqlDatabaseType.R2Sql:
-        case SqlDatabaseType.ChDb: {
+        case SqlDatabaseType.R2Sql: {
             return 'default'
         }
     }
