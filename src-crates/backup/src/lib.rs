@@ -3,6 +3,7 @@ mod process;
 pub use process::*;
 
 use proxy::{Proxy, ProxyConfig, ProxyHandler};
+use secret_resolve::Secret;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -104,6 +105,26 @@ pub struct RedisBackupTlsConfig {
 }
 
 impl BackupConfig {
+    pub async fn secret_resolve(mut self) -> Result<Self, secret_resolve::Error> {
+        match &mut self {
+            BackupConfig::SQLite(_) => {}
+            BackupConfig::DuckDB(_) => {}
+            BackupConfig::PostgreSQL(config) => {
+                config.password = Secret::resolve(&config.password).await?;
+                ProxyConfig::secret_resolve(&mut config.proxy).await?;
+            }
+            BackupConfig::MySQL(config) => {
+                config.password = Secret::resolve_option(config.password.take()).await?;
+                ProxyConfig::secret_resolve(&mut config.proxy).await?;
+            }
+            BackupConfig::Redis(config) => {
+                config.password = Secret::resolve_option(config.password.take()).await?;
+                ProxyConfig::secret_resolve(&mut config.proxy).await?;
+            }
+        }
+        Ok(self)
+    }
+
     // Replace target address with proxy address
     async fn start_proxy(
         proxy: ProxyConfig,

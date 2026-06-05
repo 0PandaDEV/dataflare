@@ -4,6 +4,7 @@ edition.workspace = true
 
 [dependencies]
 serde = { workspace = true }
+secret-resolve = { path = "../secret-resolve" }
 shell = { path = "../shell" }
 proxy = { path = "../proxy" }
 tokio = { workspace = true, features = [

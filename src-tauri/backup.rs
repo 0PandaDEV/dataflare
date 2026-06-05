@@ -16,9 +16,10 @@ pub fn backup_command_preview(config: BackupConfig) -> Result<String, String> {
 pub async fn start_backup(
     app: AppHandle,
     window: Window,
-    mut config: BackupConfig,
+    config: BackupConfig,
     path: String,
 ) -> Result<u32, String> {
+    let mut config = config.secret_resolve().await.map_err(|e| e.to_string())?;
     let proxy_handler = config.try_proxy().await?;
 
     let cmd = config.command()?;

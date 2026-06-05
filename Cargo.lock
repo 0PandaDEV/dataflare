@@ -1112,6 +1112,7 @@ name = "backup"
 version = "0.0.0"
 dependencies = [
  "proxy",
+ "secret-resolve",
  "serde",
  "shell",
  "tokio",
