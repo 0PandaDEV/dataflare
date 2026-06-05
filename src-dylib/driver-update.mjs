@@ -9,7 +9,7 @@ import crypto from 'crypto'
 // src-crates/chdb/src/lib.rs
 
 const name = 'chdb'
-const version = '20260603'
+const version = '20260605'
 
 const base = 'https://assets.dataflare.app/drivers/'
 const items = [
