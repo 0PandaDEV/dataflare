@@ -82,6 +82,7 @@ impl Secret {
     }
 
     async fn inner_resolve(secret: &str) -> Result<String, Error> {
+        // NOTE: Keep these prefixes in sync with src-web/ui/password-input.tsx.
         let trimmed = secret.trim_start();
         if let Some(rest) = trimmed.strip_prefix("env:") {
             return Self::resolve_env(rest.trim()).await;
