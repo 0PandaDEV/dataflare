@@ -1,3 +1,31 @@
+## v3.1.0
+
+**Published:** `2026-06-07T02:43:20Z`
+
+**Changes**
+
+- Add support for `chDB` database
+- Upgrade `SQLite` to v3.53.2
+- Fix `ClickHouse` datatype handling
+- Add password script to read passwords from external sources
+
+```bash
+# Read from environment variables
+env: MY_PASSWORD
+
+# Read from environment variables file
+env: /path/.env#MY_PASSWORD
+
+# Read from file content
+file: /path/file
+
+# Read from shell output
+exec: echo 'MY_PASSWORD'
+
+# Read from 1password CLI
+exec: op read "op://Vault/Item/password"
+```
+
 ## v3.0.5
 
 **Published:** `2026-05-28T09:30:00Z`
