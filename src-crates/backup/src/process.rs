@@ -11,6 +11,8 @@ use tokio::sync::mpsc::{
 
 const BUFF_SIZE: usize = 32 * 1024;
 
+// TODO: Use `/bin/sh` as backup command, similar to that in `secret-resolve`, and use the `-l` option to load environment variables.
+
 #[derive(Debug)]
 pub struct Cmd {
     cmd: Command,

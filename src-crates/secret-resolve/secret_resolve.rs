@@ -16,12 +16,14 @@ use tokio::fs;
 use tokio::process::Command;
 use tokio::time::timeout;
 
+// TODO: Output from .profile can pollute the resolved secret.
+
 #[cfg(target_os = "linux")]
-const SHELL: (&str, &str) = ("/bin/sh", "-c");
+const SHELL: (&str, &[&str]) = ("/bin/sh", &["-l", "-c"]);
 #[cfg(target_os = "macos")]
-const SHELL: (&str, &str) = ("/bin/sh", "-c");
+const SHELL: (&str, &[&str]) = ("/bin/sh", &["-l", "-c"]);
 #[cfg(target_os = "windows")]
-const SHELL: (&str, &str) = ("cmd.exe", "/C");
+const SHELL: (&str, &[&str]) = ("cmd.exe", &["/C"]);
 
 const MAX_FILE_SIZE: u64 = 1024 * 1024;
 
@@ -154,8 +156,8 @@ impl Secret {
             }
         }
 
-        let (shell, flag) = SHELL;
-        let output = Command::new(shell).arg(flag).arg(command).output();
+        let (shell, args) = SHELL;
+        let output = Command::new(shell).args(args).arg(command).output();
 
         let output = timeout(EXEC_TIMEOUT, output)
             .await
