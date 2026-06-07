@@ -16,6 +16,9 @@ use tokio::fs;
 use tokio::process::Command;
 use tokio::time::timeout;
 
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
+
 // TODO: Output from .profile can pollute the resolved secret.
 
 #[cfg(target_os = "linux")]
@@ -157,9 +160,15 @@ impl Secret {
         }
 
         let (shell, args) = SHELL;
-        let output = Command::new(shell).args(args).arg(command).output();
+        let mut process = Command::new(shell);
+        process.args(args).arg(command);
+        #[cfg(target_os = "windows")]
+        {
+            const CREATE_NO_WINDOW: u32 = 0x08000000;
+            process.as_std_mut().creation_flags(CREATE_NO_WINDOW);
+        }
 
-        let output = timeout(EXEC_TIMEOUT, output)
+        let output = timeout(EXEC_TIMEOUT, process.output())
             .await
             .map_err(|_| Error::CommandTimedOut {
                 command: command.into(),
