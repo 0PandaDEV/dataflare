@@ -9,6 +9,9 @@ use tokio::sync::mpsc::{
     Receiver, Sender, UnboundedReceiver, UnboundedSender, channel, unbounded_channel,
 };
 
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
+
 const BUFF_SIZE: usize = 32 * 1024;
 
 // TODO: Use `/bin/sh` as backup command, similar to that in `secret-resolve`, and use the `-l` option to load environment variables.
@@ -21,6 +24,11 @@ pub struct Cmd {
 impl Cmd {
     pub fn new<S: AsRef<OsStr>>(program: S) -> Self {
         let mut cmd = Command::new(program);
+        #[cfg(target_os = "windows")]
+        {
+            const CREATE_NO_WINDOW: u32 = 0x08000000;
+            cmd.as_std_mut().creation_flags(CREATE_NO_WINDOW);
+        }
         cmd.stdout(Stdio::piped());
         cmd.stderr(Stdio::piped());
         Self { cmd }
