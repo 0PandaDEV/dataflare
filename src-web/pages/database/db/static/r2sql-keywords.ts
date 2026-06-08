@@ -2,7 +2,7 @@
 // https://developers.cloudflare.com/r2-sql/sql-reference/
 // https://developers.cloudflare.com/r2-sql/sql-reference/scalar-functions/
 // https://developers.cloudflare.com/r2-sql/sql-reference/complex-types/
-// Date: 2026-04-21
+// Date: 2026-06-08
 export default [
     // Statement and schema keywords
     'DATABASES',
@@ -15,20 +15,36 @@ export default [
     'WITH',
 
     // Clause and modifier keywords
+    'ALL',
     'AS',
     'ASC',
     'BY',
+    'CROSS',
     'DESC',
+    'DISTINCT',
+    'EXCEPT',
+    'FORMAT',
     'FROM',
+    'FULL',
     'GROUP',
     'HAVING',
+    'INNER',
+    'INTERSECT',
+    'JOIN',
+    'JSON',
+    'LEFT',
     'LIMIT',
+    'ON',
     'ORDER',
+    'OUTER',
+    'RIGHT',
+    'UNION',
     'WHERE',
 
     // Predicate and logical keywords
     'AND',
     'BETWEEN',
+    'EXISTS',
     'FALSE',
     'ILIKE',
     'IN',
@@ -60,21 +76,30 @@ export default [
 
     // Type keywords
     'ARRAY',
+    'BIGINT',
     'BOOLEAN',
     'BYTEA',
+    'CHAR',
     'DATE',
     'DOUBLE',
     'FLOAT',
     'INT',
     'INTEGER',
     'MAP',
+    'REAL',
     'STRING',
     'STRUCT',
+    'TEXT',
     'TIMESTAMP',
+    'TIMESTAMPTZ',
+    'VARCHAR',
 
     // Common combinations
     'CASE WHEN',
+    'CROSS JOIN',
+    'FULL OUTER JOIN',
     'GROUP BY',
+    'INNER JOIN',
     'IS FALSE',
     'IS NOT FALSE',
     'IS NOT NULL',
@@ -83,15 +108,20 @@ export default [
     'IS NULL',
     'IS TRUE',
     'IS UNKNOWN',
+    'LEFT JOIN',
+    'NOT EXISTS',
     'NOT BETWEEN',
     'NOT ILIKE',
     'NOT IN',
     'NOT LIKE',
     'ORDER BY',
+    'RIGHT JOIN',
+    'SELECT DISTINCT',
     'SELECT *',
     'SELECT * FROM',
     'SELECT COUNT(*)',
     'SELECT COUNT(*) FROM',
+    'UNION ALL',
     'EXPLAIN FORMAT JSON',
     'SHOW DATABASES',
     'SHOW NAMESPACES',
