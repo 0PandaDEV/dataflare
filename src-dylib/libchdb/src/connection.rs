@@ -158,7 +158,7 @@ impl Connection {
 }
 
 #[cfg(test)]
-// NOTE: run tests with `cargo test -- --test-threads=1`
+// NOTE: run tests with `cargo test -- --test-threads 1`
 mod tests {
     use super::{ConnectPath, Connection, QueryValue};
 
