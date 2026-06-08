@@ -9,7 +9,7 @@ import crypto from 'crypto'
 // src-crates/chdb/src/lib.rs
 
 const name = 'chdb'
-const version = '20260605'
+const version = '20260608'
 
 const base = 'https://assets.dataflare.app/drivers/'
 const items = [
@@ -57,9 +57,10 @@ const sha256 = async ({ prefix, target, suffix, cfg }) => {
     let hex = ''
     switch (res.status) {
         case 200: {
-            const buffer = new Uint8Array(await res.arrayBuffer())
             const hash = crypto.createHash('sha256')
-            hash.update(buffer)
+            for await (const chunk of res.body) {
+                hash.update(chunk)
+            }
             hex = `"${hash.digest('hex')}";`
             break
         }
