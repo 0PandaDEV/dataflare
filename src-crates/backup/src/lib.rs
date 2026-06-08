@@ -3,10 +3,10 @@ mod process;
 pub use process::*;
 
 use proxy::{Proxy, ProxyConfig, ProxyHandler};
-use secret_resolve::Secret;
+use secret_resolve::ResolveSecrets;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ResolveSecrets)]
 #[serde(tag = "type", content = "options")]
 pub enum BackupConfig {
     SQLite(SqliteBackupConfig),
@@ -16,26 +16,27 @@ pub enum BackupConfig {
     Redis(RedisBackupConfig),
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ResolveSecrets)]
 pub struct SqliteBackupConfig {
     pub sqlite3_path: String,
     pub database_path: String,
     pub tables: Vec<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ResolveSecrets)]
 pub struct DuckDbBackupConfig {
     pub duckdb_path: String,
     pub database_path: String,
     pub tables: Vec<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ResolveSecrets)]
 pub struct PostgresBackupConfig {
     pub pg_dump_path: String,
     pub host: String,
     pub port: String,
     pub username: String,
+    #[secret]
     pub password: String,
     pub database: String,
 
@@ -49,6 +50,7 @@ pub struct PostgresBackupConfig {
     pub flags: Vec<String>,
     pub custom: String,
 
+    #[secret]
     pub proxy: Option<ProxyConfig>,
 }
 
@@ -69,12 +71,13 @@ pub enum PgFormat {
     Tar,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ResolveSecrets)]
 pub struct MySqlBackupConfig {
     pub mysqldump_path: String,
     pub host: String,
     pub port: String,
     pub username: String,
+    #[secret]
     pub password: Option<String>,
 
     pub databases: Vec<String>,
@@ -83,17 +86,20 @@ pub struct MySqlBackupConfig {
     pub flags: Vec<String>,
     pub custom: String,
 
+    #[secret]
     pub proxy: Option<ProxyConfig>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ResolveSecrets)]
 pub struct RedisBackupConfig {
     pub redis_cli_path: String,
     pub host: String,
     pub port: String,
     pub username: Option<String>,
+    #[secret]
     pub password: Option<String>,
     pub tls: Option<RedisBackupTlsConfig>,
+    #[secret]
     pub proxy: Option<ProxyConfig>,
 }
 
@@ -105,26 +111,6 @@ pub struct RedisBackupTlsConfig {
 }
 
 impl BackupConfig {
-    pub async fn secret_resolve(mut self) -> Result<Self, secret_resolve::Error> {
-        match &mut self {
-            BackupConfig::SQLite(_) => {}
-            BackupConfig::DuckDB(_) => {}
-            BackupConfig::PostgreSQL(config) => {
-                config.password = Secret::resolve(&config.password).await?;
-                ProxyConfig::secret_resolve(&mut config.proxy).await?;
-            }
-            BackupConfig::MySQL(config) => {
-                config.password = Secret::resolve_option(config.password.take()).await?;
-                ProxyConfig::secret_resolve(&mut config.proxy).await?;
-            }
-            BackupConfig::Redis(config) => {
-                config.password = Secret::resolve_option(config.password.take()).await?;
-                ProxyConfig::secret_resolve(&mut config.proxy).await?;
-            }
-        }
-        Ok(self)
-    }
-
     // Replace target address with proxy address
     async fn start_proxy(
         proxy: ProxyConfig,

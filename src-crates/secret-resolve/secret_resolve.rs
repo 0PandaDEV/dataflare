@@ -9,12 +9,16 @@
 //! TODO:
 //! Read from the keychain? 'keychain: service/account'
 //! Read from popups or other secure input methods? 'ask: prompt message'
+extern crate self as secret_resolve;
+
 use std::env;
 use std::io;
 use std::time::Duration;
 use tokio::fs;
 use tokio::process::Command;
 use tokio::time::timeout;
+
+pub use secret_resolve_derive::ResolveSecrets;
 
 #[cfg(target_os = "windows")]
 use std::os::windows::process::CommandExt;
@@ -72,21 +76,20 @@ pub enum Error {
     DangerousCommand { command: String },
 }
 
-pub struct Secret;
+pub async fn resolve_secret(value: &str) -> Result<String, Error> {
+    Secret::resolve(value).await
+}
+
+#[allow(async_fn_in_trait)]
+pub trait ResolveSecrets {
+    async fn resolve_secrets(&mut self) -> Result<(), Error>;
+}
+
+struct Secret;
 
 impl Secret {
-    pub async fn resolve(secret: impl AsRef<str>) -> Result<String, Error> {
-        Self::inner_resolve(secret.as_ref()).await
-    }
-
-    pub async fn resolve_option(secret: Option<impl AsRef<str>>) -> Result<Option<String>, Error> {
-        match secret {
-            Some(s) => Self::inner_resolve(s.as_ref()).await.map(Some),
-            None => Ok(None),
-        }
-    }
-
-    async fn inner_resolve(secret: &str) -> Result<String, Error> {
+    async fn resolve(secret: impl AsRef<str>) -> Result<String, Error> {
+        let secret = secret.as_ref();
         // NOTE: Keep these prefixes in sync with src-web/ui/password-input.tsx.
         let trimmed = secret.trim_start();
         if let Some(rest) = trimmed.strip_prefix("env:") {
@@ -224,18 +227,6 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_resolve_option() {
-        assert_eq!(Secret::resolve("123").await.unwrap(), "123");
-        assert_eq!(
-            Secret::resolve_option(Some("123".to_string()))
-                .await
-                .unwrap(),
-            Some("123".to_string())
-        );
-        assert_eq!(Secret::resolve_option(None::<String>).await.unwrap(), None);
-    }
-
-    #[tokio::test]
     async fn test_resolve_empty() {
         // TODO
         // let result = Secret::resolve("env:").await.unwrap();
@@ -347,4 +338,97 @@ mod tests {
     //     let result = Secret::resolve("exec:sleep 10").await;
     //     assert!(matches!(result, Err(Error::CommandTimedOut { .. })));
     // }
+
+    #[tokio::test]
+    async fn test_empty_derive() {
+        #[derive(ResolveSecrets, PartialEq, Eq, Debug)]
+        struct S {}
+        let mut config = S {};
+        config.resolve_secrets().await.unwrap();
+        assert_eq!(config, S {});
+    }
+
+    #[tokio::test]
+    async fn test_simple_derive() {
+        #[derive(ResolveSecrets, PartialEq, Eq, Debug)]
+        struct S {
+            #[secret]
+            value: String,
+            #[secret]
+            optional: Option<String>,
+        }
+        let mut config = S {
+            value: "exec: echo value".to_string(),
+            optional: Some("exec: echo optional".to_string()),
+        };
+        config.resolve_secrets().await.unwrap();
+        assert_eq!(
+            config,
+            S {
+                value: "value".to_string(),
+                optional: Some("optional".to_string()),
+            }
+        );
+    }
+
+    #[tokio::test]
+    async fn test_resolve_secrets_derive() {
+        #[derive(ResolveSecrets)]
+        struct Nested {
+            #[secret]
+            value: String,
+        }
+
+        #[derive(ResolveSecrets)]
+        struct Config {
+            #[secret]
+            password: String,
+            #[secret]
+            optional: Option<String>,
+            #[secret]
+            nested: Nested,
+        }
+
+        #[derive(ResolveSecrets)]
+        enum Auth {
+            Password {
+                user: String,
+                #[secret]
+                password: String,
+            },
+        }
+
+        #[derive(ResolveSecrets)]
+        enum Source {
+            Nested(Nested),
+        }
+
+        let mut config = Config {
+            password: "plain".to_string(),
+            optional: Some("optional".to_string()),
+            nested: Nested {
+                value: "nested".to_string(),
+            },
+        };
+        config.resolve_secrets().await.unwrap();
+        assert_eq!(config.password, "plain");
+        assert_eq!(config.optional.as_deref(), Some("optional"));
+        assert_eq!(config.nested.value, "nested");
+
+        let mut auth = Auth::Password {
+            user: "user".to_string(),
+            password: "password".to_string(),
+        };
+        auth.resolve_secrets().await.unwrap();
+        let Auth::Password { user, password } = auth;
+        assert_eq!(user, "user");
+        assert_eq!(password, "password");
+
+        let mut source = Source::Nested(Nested {
+            value: "source".to_string(),
+        });
+        source.resolve_secrets().await.unwrap();
+        let Source::Nested(nested) = source;
+        assert_eq!(nested.value, "source");
+    }
 }

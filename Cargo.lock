@@ -8023,8 +8023,18 @@ name = "secret-resolve"
 version = "0.0.0"
 dependencies = [
  "dotenvy",
+ "secret-resolve-derive",
  "thiserror 2.0.18",
  "tokio",
+]
+
+[[package]]
+name = "secret-resolve-derive"
+version = "0.0.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.117",
 ]
 
 [[package]]

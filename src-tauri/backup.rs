@@ -1,5 +1,6 @@
 use backup::{BackupConfig, Killer};
 use proxy::ProxyHandler;
+use secret_resolve::ResolveSecrets;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU32, Ordering};
@@ -16,10 +17,10 @@ pub fn backup_command_preview(config: BackupConfig) -> Result<String, String> {
 pub async fn start_backup(
     app: AppHandle,
     window: Window,
-    config: BackupConfig,
+    mut config: BackupConfig,
     path: String,
 ) -> Result<u32, String> {
-    let mut config = config.secret_resolve().await.map_err(|e| e.to_string())?;
+    config.resolve_secrets().await.map_err(|e| e.to_string())?;
     let proxy_handler = config.try_proxy().await?;
 
     let cmd = config.command()?;

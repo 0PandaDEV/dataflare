@@ -3,25 +3,29 @@ use russh::client::{AuthResult, Config, Handler, Msg, connect};
 use russh::keys::agent::client::AgentClient;
 use russh::keys::{Algorithm, HashAlg, PrivateKeyWithHashAlg, PublicKey, decode_secret_key};
 use russh::{ChannelStream, MethodSet};
+use secret_resolve::ResolveSecrets;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, ResolveSecrets)]
 pub struct SshProxyConfig {
     pub host: String,
     pub port: Option<u16>,
     pub user: String,
+    #[secret]
     pub auth: SshAuth,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, ResolveSecrets)]
 #[serde(tag = "type", rename_all = "lowercase", content = "options")]
 pub enum SshAuth {
     Password {
+        #[secret]
         password: String,
     },
     Key {
         key: String,
+        #[secret]
         password: Option<String>,
     },
     Agent {

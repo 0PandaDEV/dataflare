@@ -1,0 +1,12 @@
+[package]
+name = "secret-resolve-derive"
+edition.workspace = true
+
+[lib]
+proc-macro = true
+path = "secret_resolve_derive.rs"
+
+[dependencies]
+proc-macro2 = "1.0"
+quote = "1.0"
+syn = "2.0"

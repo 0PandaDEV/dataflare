@@ -9,6 +9,7 @@ path = "secret_resolve.rs"
 tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
 
 [dependencies]
+secret-resolve-derive = { path = "../secret-resolve-derive" }
 thiserror = { workspace = true }
 tokio = { workspace = true }
 dotenvy = "0.15.7"
