@@ -1,3 +1,13 @@
+## v3.1.1
+
+**Published:** `2026-06-08T21:00:00Z`
+
+**Changes**
+
+- Upgrade `chDB` to v26.5.0
+- Add `ResolveSecrets` derive macro
+- Hide command windows during command execution on Windows
+
 ## v3.1.0
 
 **Published:** `2026-06-07T02:43:20Z`
