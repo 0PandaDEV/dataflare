@@ -46,7 +46,6 @@ export const Item = ({
                     placeholder={placeholder}
                     value={value}
                     onChange={(val) => onChange(val)}
-                    secretResolve
                 />
             ) : (
                 <TextInput

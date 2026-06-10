@@ -11,7 +11,6 @@ export interface PasswordInputProps {
     placeholder?: string
     value: string
     onChange: (value: string) => void
-    secretResolve?: boolean
 }
 
 type SecretResolveType = 'ENV' | 'FILE' | 'EXEC'
@@ -31,16 +30,10 @@ const getSecretResolveType = (value: string): SecretResolveType | null => {
     return null
 }
 
-export const PasswordInput = ({
-    className,
-    value,
-    placeholder,
-    onChange,
-    secretResolve = false
-}: PasswordInputProps) => {
+export const PasswordInput = ({ className, value, placeholder, onChange }: PasswordInputProps) => {
     const { t } = useTranslation()
     const [show, setShow] = useState(false)
-    const secretResolveType = secretResolve ? getSecretResolveType(value) : null
+    const secretResolveType = getSecretResolveType(value)
 
     return (
         <div className={clsx('flex items-center gap-2', className)}>
@@ -74,7 +67,7 @@ export const PasswordInput = ({
                     </IconButton>
                 )}
             </div>
-            {secretResolve && <PasswordSecretResolve />}
+            <PasswordSecretResolve />
         </div>
     )
 }

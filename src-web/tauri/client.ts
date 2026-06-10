@@ -461,6 +461,10 @@ export class ClientData {
         })
     }
 
+    public static providerResolveSecret(value: string): Promise<string> {
+        return invoke('provider_resolve_secret', { value })
+    }
+
     public static chatList(cid: string): Promise<Chat[]> {
         return invoke('chat_list', { cid })
     }

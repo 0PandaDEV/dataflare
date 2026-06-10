@@ -111,6 +111,7 @@ fn main() {
         client::create_provider,
         client::update_provider,
         client::delete_provider,
+        client::provider_resolve_secret,
         // AI chat
         client::chat_list,
         client::create_chat,

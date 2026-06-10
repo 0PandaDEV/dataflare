@@ -1,6 +1,6 @@
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http'
 import z, { ZodType } from 'zod'
-import { ProviderConfig, ProviderModelConfig, ProviderType } from '../../../tauri'
+import { ClientData, ProviderConfig, ProviderModelConfig, ProviderType } from '../../../tauri'
 
 export const defaultBaseURL = (type: ProviderType): string => {
     return {
@@ -28,6 +28,9 @@ export const normalizeBaseURL = <T>(url: string, emptyFallback: T): string | T =
 }
 
 export const fetchModels = async (config: ProviderConfig): Promise<ProviderModelConfig[]> => {
+    const apiKey = await ClientData.providerResolveSecret(config.apiKey)
+    config = { ...config, apiKey }
+
     const fetchJSON = async <T extends ZodType>(url: string, schema: T, headers?: Record<string, string>) => {
         const res = await tauriFetch(url, { method: 'GET', headers })
         if (res.status !== 200) {

@@ -430,6 +430,7 @@ export const createAgent = (
 }
 
 export type AgentService = ReturnType<typeof createAgent>
+export type AgentFactory = () => Promise<AgentService>
 export type AgentMessage = InferAgentUIMessage<AgentService>
 export type AgentPart = AgentMessage['parts'][number]
 export type AgentToolPart = ToolUIPart<InferUITools<AgentService['tools']>>
@@ -443,9 +444,9 @@ type SendMessageOptions = {
 } & ChatRequestOptions
 
 export class AgentTransport implements ChatTransport<AgentMessage> {
-    agent: MutableRefObject<AgentService | null>
+    agent: MutableRefObject<AgentFactory | null>
 
-    constructor(agent: MutableRefObject<AgentService | null>) {
+    constructor(agent: MutableRefObject<AgentFactory | null>) {
         this.agent = agent
     }
 
@@ -456,7 +457,8 @@ export class AgentTransport implements ChatTransport<AgentMessage> {
         if (this.agent.current === null) {
             throw new Error(t('noModelSelected'))
         }
-        const stream = await this.agent.current.stream({
+        const agent = await this.agent.current()
+        const stream = await agent.stream({
             abortSignal,
             messages: await convertToModelMessages(messages)
         })
