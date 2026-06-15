@@ -1,3 +1,15 @@
+## v3.1.2
+
+**Published:** `2026-06-15T07:19:12Z`
+
+**Changes**
+
+- Add support for portable app builds on Windows
+- Resolve AI provider API keys on demand
+- Update R2 SQL keywords, functions, and data types
+- Improve database feature checks
+- Fix database table footer overflow
+
 ## v3.1.1
 
 **Published:** `2026-06-08T21:00:00Z`
