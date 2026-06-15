@@ -193,7 +193,6 @@ class Db {
                 return {
                     multipleSchemas: true,
                     duplicateTable: false,
-                    // Uncertain
                     functions: false,
                     extensions: false,
                     triggers: false
