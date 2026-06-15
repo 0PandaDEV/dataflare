@@ -90,7 +90,7 @@ const SchemaManager = ({ defaultSchema, hidden }: ManagerProps) => {
     return (
         <div className='relative min-h-0 flex-1'>
             <div className='absolute left-4 z-10 flex h-11 items-center gap-2'>
-                {db.supportsMultipleSchemas() && (
+                {db.features.multipleSchemas && (
                     <Select
                         className='w-48 bg-main'
                         value={schema}

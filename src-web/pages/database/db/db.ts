@@ -34,7 +34,8 @@ import {
     TableIndex,
     Extension,
     SetupExtension,
-    TableType
+    TableType,
+    DbFeatures
 } from './db-types'
 import { Escape } from './escape'
 
@@ -133,34 +134,113 @@ class Db {
         }
     }
 
-    public supportsMultipleSchemas(): boolean {
+    public get features(): DbFeatures {
         switch (this.type) {
             case SqlDatabaseType.Sqlite:
             case SqlDatabaseType.Turso:
             case SqlDatabaseType.Rqlite:
             case SqlDatabaseType.EchoLite:
             case SqlDatabaseType.SqlCipher:
-            case SqlDatabaseType.CloudflareD1:
-            case SqlDatabaseType.WorkersAnalyticsEngine:
-            case SqlDatabaseType.QuestDB:
-            case SqlDatabaseType.ManticoreSearch: {
-                return false
+            case SqlDatabaseType.CloudflareD1: {
+                return {
+                    multipleSchemas: false,
+                    duplicateTable: true,
+                    functions: false,
+                    extensions: false,
+                    triggers: true
+                }
             }
-            case SqlDatabaseType.Postgres:
-            case SqlDatabaseType.CockroachDB:
+            case SqlDatabaseType.Postgres: {
+                return {
+                    multipleSchemas: true,
+                    duplicateTable: true,
+                    functions: true,
+                    extensions: true,
+                    triggers: true
+                }
+            }
+            case SqlDatabaseType.CockroachDB: {
+                return {
+                    multipleSchemas: true,
+                    duplicateTable: true,
+                    functions: true,
+                    extensions: true,
+                    triggers: false
+                }
+            }
             case SqlDatabaseType.MySql:
             case SqlDatabaseType.MariaDB:
-            case SqlDatabaseType.MsSql:
-            case SqlDatabaseType.ChDb:
+            case SqlDatabaseType.MsSql: {
+                return {
+                    multipleSchemas: true,
+                    duplicateTable: true,
+                    functions: true,
+                    extensions: false,
+                    triggers: true
+                }
+            }
             case SqlDatabaseType.ClickHouse:
+            case SqlDatabaseType.R2Sql: {
+                return {
+                    multipleSchemas: true,
+                    duplicateTable: false,
+                    functions: false,
+                    extensions: false,
+                    triggers: false
+                }
+            }
+            case SqlDatabaseType.ChDb: {
+                return {
+                    multipleSchemas: true,
+                    duplicateTable: false,
+                    // Uncertain
+                    functions: false,
+                    extensions: false,
+                    triggers: false
+                }
+            }
             case SqlDatabaseType.Databend:
             case SqlDatabaseType.Databricks:
             case SqlDatabaseType.Presto:
             case SqlDatabaseType.Trino:
-            case SqlDatabaseType.BigQuery:
-            case SqlDatabaseType.DuckDB:
-            case SqlDatabaseType.R2Sql: {
-                return true
+            case SqlDatabaseType.BigQuery: {
+                return {
+                    multipleSchemas: true,
+                    duplicateTable: true,
+                    functions: false,
+                    extensions: false,
+                    triggers: false
+                }
+            }
+            case SqlDatabaseType.DuckDB: {
+                return {
+                    multipleSchemas: true,
+                    duplicateTable: true,
+                    functions: false,
+                    // TODO: DuckDB can actually support duckdb_extensions()
+                    extensions: false,
+                    // DuckDB doesn't support triggers yet https://github.com/duckdb/duckdb/issues/750
+                    triggers: false
+                }
+            }
+            case SqlDatabaseType.ManticoreSearch: {
+                return {
+                    multipleSchemas: false,
+                    duplicateTable: true,
+                    functions: false,
+                    extensions: false,
+                    triggers: false
+                }
+            }
+            case SqlDatabaseType.WorkersAnalyticsEngine:
+            case SqlDatabaseType.QuestDB: {
+                return {
+                    multipleSchemas: false,
+                    duplicateTable: false,
+                    functions: false,
+                    extensions: false,
+                    triggers: false
+                }
             }
         }
     }
@@ -475,37 +555,6 @@ class Db {
         return [`CREATE TABLE ${this.escape.entry(entry)} (${contentSql});`, ...indexs]
     }
 
-    public supportDuplicateTable(): boolean {
-        switch (this.type) {
-            case SqlDatabaseType.Sqlite:
-            case SqlDatabaseType.SqlCipher:
-            case SqlDatabaseType.Postgres:
-            case SqlDatabaseType.CockroachDB:
-            case SqlDatabaseType.MySql:
-            case SqlDatabaseType.MariaDB:
-            case SqlDatabaseType.MsSql:
-            case SqlDatabaseType.Turso:
-            case SqlDatabaseType.DuckDB:
-            case SqlDatabaseType.Rqlite:
-            case SqlDatabaseType.EchoLite:
-            case SqlDatabaseType.CloudflareD1:
-            case SqlDatabaseType.Databend:
-            case SqlDatabaseType.Databricks:
-            case SqlDatabaseType.Presto:
-            case SqlDatabaseType.Trino:
-            case SqlDatabaseType.BigQuery:
-            case SqlDatabaseType.ManticoreSearch: {
-                return true
-            }
-            case SqlDatabaseType.ChDb:
-            case SqlDatabaseType.ClickHouse:
-            case SqlDatabaseType.WorkersAnalyticsEngine:
-            case SqlDatabaseType.R2Sql:
-            case SqlDatabaseType.QuestDB: {
-                return false
-            }
-        }
-    }
     public duplicateTableSql(entry: Entry, newTableName: string, duplicateRows: boolean): string {
         const table = this.escape.entry(entry)
         const newTable = this.escape.entry({ schema: entry.schema, table: newTableName })
@@ -3200,39 +3249,6 @@ ORDER BY c.table_name, c.ordinal_position;`
         return entrys
     }
 
-    public supportFunctions(): boolean {
-        switch (this.type) {
-            case SqlDatabaseType.Postgres:
-            case SqlDatabaseType.CockroachDB:
-            case SqlDatabaseType.MySql:
-            case SqlDatabaseType.MariaDB:
-            case SqlDatabaseType.MsSql: {
-                return true
-            }
-            case SqlDatabaseType.Sqlite:
-            case SqlDatabaseType.SqlCipher:
-            case SqlDatabaseType.Turso:
-            case SqlDatabaseType.Rqlite:
-            case SqlDatabaseType.EchoLite:
-            case SqlDatabaseType.CloudflareD1:
-            case SqlDatabaseType.WorkersAnalyticsEngine:
-            case SqlDatabaseType.R2Sql:
-            case SqlDatabaseType.DuckDB:
-            // Uncertain
-            case SqlDatabaseType.ChDb:
-            case SqlDatabaseType.ClickHouse:
-            case SqlDatabaseType.Databend:
-            case SqlDatabaseType.BigQuery:
-            case SqlDatabaseType.Databricks:
-            case SqlDatabaseType.Presto:
-            case SqlDatabaseType.Trino:
-            case SqlDatabaseType.QuestDB:
-            case SqlDatabaseType.ManticoreSearch: {
-                return false
-            }
-        }
-    }
-
     // Get all functions under a specified schema
     public async schemaFunctions(schemaName: string): Promise<DbFunction[]> {
         let sql: string
@@ -3334,39 +3350,6 @@ ORDER BY ROUTINE_NAME;`
         })
     }
 
-    public supportExtensions(): boolean {
-        switch (this.type) {
-            case SqlDatabaseType.Postgres:
-            case SqlDatabaseType.CockroachDB: {
-                return true
-            }
-            case SqlDatabaseType.Sqlite:
-            case SqlDatabaseType.SqlCipher:
-            case SqlDatabaseType.Turso:
-            case SqlDatabaseType.Rqlite:
-            case SqlDatabaseType.EchoLite:
-            case SqlDatabaseType.CloudflareD1:
-            case SqlDatabaseType.WorkersAnalyticsEngine:
-            case SqlDatabaseType.R2Sql:
-            case SqlDatabaseType.MySql:
-            case SqlDatabaseType.MariaDB:
-            case SqlDatabaseType.ManticoreSearch:
-            case SqlDatabaseType.MsSql:
-            // TODO: DuckDB can actually support duckdb_extensions()
-            case SqlDatabaseType.DuckDB:
-            case SqlDatabaseType.ChDb:
-            case SqlDatabaseType.ClickHouse:
-            case SqlDatabaseType.Databend:
-            case SqlDatabaseType.Databricks:
-            case SqlDatabaseType.Presto:
-            case SqlDatabaseType.Trino:
-            case SqlDatabaseType.BigQuery:
-            case SqlDatabaseType.QuestDB: {
-                return false
-            }
-        }
-    }
-
     // Get all available extensions in the database
     public async extensions(): Promise<Extension[]> {
         switch (this.type) {
@@ -3435,39 +3418,6 @@ ORDER BY e.name;`
                 await this.execute(
                     `CREATE EXTENSION ${this.escape.id(name)} SCHEMA ${this.escape.id(schema)} CASCADE;`
                 )
-            }
-        }
-    }
-
-    public supportTriggers(): boolean {
-        switch (this.type) {
-            case SqlDatabaseType.Postgres:
-            case SqlDatabaseType.Sqlite:
-            case SqlDatabaseType.SqlCipher:
-            case SqlDatabaseType.Turso:
-            case SqlDatabaseType.Rqlite:
-            case SqlDatabaseType.EchoLite:
-            case SqlDatabaseType.CloudflareD1:
-            case SqlDatabaseType.MySql:
-            case SqlDatabaseType.MariaDB:
-            case SqlDatabaseType.MsSql: {
-                return true
-            }
-            case SqlDatabaseType.CockroachDB:
-            // DuckDB doesn't support triggers yet https://github.com/duckdb/duckdb/issues/750
-            case SqlDatabaseType.DuckDB:
-            case SqlDatabaseType.ChDb:
-            case SqlDatabaseType.ClickHouse:
-            case SqlDatabaseType.Databend:
-            case SqlDatabaseType.Databricks:
-            case SqlDatabaseType.Presto:
-            case SqlDatabaseType.Trino:
-            case SqlDatabaseType.BigQuery:
-            case SqlDatabaseType.QuestDB:
-            case SqlDatabaseType.WorkersAnalyticsEngine:
-            case SqlDatabaseType.R2Sql:
-            case SqlDatabaseType.ManticoreSearch: {
-                return false
             }
         }
     }

@@ -53,7 +53,7 @@ export const availableTools = () => {
         { name: ToolName.runSQLQuery, allowAutoapproval: false },
         { name: ToolName.generateChart, allowAutoapproval: false }
     ]
-    if (!db.supportsMultipleSchemas()) {
+    if (!db.features.multipleSchemas) {
         tools.shift()
     }
     return tools
@@ -178,7 +178,7 @@ const databaseName = (type: SqlDatabaseType): string => {
 }
 
 const createAgentTools = (type: SqlDatabaseType, readonly: boolean) => {
-    const multipleSchemas = db.supportsMultipleSchemas()
+    const multipleSchemas = db.features.multipleSchemas
 
     const [minSample, defaultSample, maxSample] = [1, 5, 20]
     const sampleDescribe = `The maximum number of sample values to retrieve (${minSample}-${maxSample}), default: ${defaultSample}`

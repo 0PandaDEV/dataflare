@@ -38,7 +38,7 @@ interface Props {
 
 export const ForeignKey = ({ fk, onChange, onDelete }: Props) => {
     const { t } = useTranslation()
-    const showSchema = db.supportsMultipleSchemas()
+    const showSchema = db.features.multipleSchemas
     const [open, setOpen] = useState(true)
     const { data: tables } = useTables()
     const { schemas, selectOptions } = useSchemaOptions(tables)
