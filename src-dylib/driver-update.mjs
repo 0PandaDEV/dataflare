@@ -8,8 +8,8 @@ import crypto from 'crypto'
 // src-crates/duckdb/src/lib.rs
 // src-crates/chdb/src/lib.rs
 
-const name = 'chdb'
-const version = '20260608'
+const name = 'duckdb'
+const version = '20260617'
 
 const base = 'https://assets.dataflare.app/drivers/'
 const items = [

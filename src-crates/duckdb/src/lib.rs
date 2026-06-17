@@ -11,19 +11,19 @@ use std::ffi::c_void;
 // Do not update manually
 // Use `node ./src-dylib/driver-update.mjs` update the sha256 values.
 
-const DUCKDB_DRIVER_VERSION: &str = "20260522";
+const DUCKDB_DRIVER_VERSION: &str = "20260617";
 #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
-const DUCKDB_SHA256: &str = "fd06a5f63a34360b7d60d3ef03912a0745cbfbb4c1ac00f67f578054baacc0b2";
+const DUCKDB_SHA256: &str = "2a8ccf4226878aea797870b785e622326a77a25453a8a6acfcce955de61723d7";
 #[cfg(all(target_os = "macos", target_arch = "x86_64"))]
-const DUCKDB_SHA256: &str = "d005ce529265242bfb1eaa9803642ab9c2f133dc38476e5ccf9a45a17e16dfb9";
+const DUCKDB_SHA256: &str = "5812e7fdabe2c27954124ce32e02b58fa117de39aaae241bc696e3789b7ccc02";
 #[cfg(all(target_os = "linux", target_arch = "aarch64", target_env = "gnu"))]
-const DUCKDB_SHA256: &str = "e9ab8b562564b0efa353a6677e74e7ea6ed56e027283c4b1d2f072ceff57dbf4";
+const DUCKDB_SHA256: &str = "07a60cc5f938ac5c40cd0aeeab34dca693a5d7773424b355c9dcf366497b35e2";
 #[cfg(all(target_os = "linux", target_arch = "x86_64", target_env = "gnu"))]
-const DUCKDB_SHA256: &str = "633450ae065c9b69895aed1cc22993c6d5302b275ea5e8723bb1e5cad91d53e2";
+const DUCKDB_SHA256: &str = "55efab60aa1884e3842be19aa65fd5f834ee2e1f6076679e1ea6c95542b054c1";
 #[cfg(all(target_os = "windows", target_arch = "aarch64", target_env = "msvc"))]
-const DUCKDB_SHA256: &str = "fa64f943cb25bbf6c6b356b5497b23cea73dac882a69a37d9a34f9242eea5d9c";
+const DUCKDB_SHA256: &str = "1dca42bcf916c1a9c9842ef6f2ea3b1ebedf0f7d8ea88c8b3a1b7ce3df0c9db6";
 #[cfg(all(target_os = "windows", target_arch = "x86_64", target_env = "msvc"))]
-const DUCKDB_SHA256: &str = "d1d239612a8c2250da8623ade8f71cc2a2db0c657c082dfb066c69533d18c419";
+const DUCKDB_SHA256: &str = "1469ec19f91ad7d33e273bb3baa2799a9e192eacdcb80dc0085c352f9eafb9ed";
 
 #[derive(Debug)]
 pub struct Connection {
