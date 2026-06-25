@@ -47,7 +47,7 @@ const Layout = (props: {
             className='flex shrink-0 items-center justify-between gap-3 border-b border-separator'
             style={{ height: props.height }}
         >
-            <div data-tauri-drag-region className='flex w-1/5 min-w-min grow items-center'>
+            <div data-tauri-drag-region='deep' className='flex w-1/5 min-w-min grow items-center'>
                 {props.logo}
             </div>
             <p
@@ -109,7 +109,7 @@ const MacOsTitlebar = ({ title, titleSemibold, children }: TitlebarProps) => {
 const WindowsTitleBar = ({ title, minimizable, maximizable, children }: TitlebarProps) => {
     const maximized = useIsMaximized()
 
-    const logo = <img data-tauri-drag-region src={icon} className='pointer-events-none ml-2 size-4' />
+    const logo = <img src={icon} className='pointer-events-none ml-2 size-4' />
 
     const actions = (
         <>
@@ -161,7 +161,7 @@ const WindowsTitleBar = ({ title, minimizable, maximizable, children }: Titlebar
 const LinuxTitlebar = ({ title, minimizable, maximizable, children }: TitlebarProps) => {
     const maximized = useIsMaximized()
 
-    const logo = <img data-tauri-drag-region src={icon} className='pointer-events-none ml-3 size-4' />
+    const logo = <img src={icon} className='pointer-events-none ml-3 size-4' />
 
     const actions = (
         <>
