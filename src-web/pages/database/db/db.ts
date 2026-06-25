@@ -2105,7 +2105,8 @@ WHERE
                     case SqlDatabaseType.Rqlite:
                     case SqlDatabaseType.EchoLite:
                     case SqlDatabaseType.CloudflareD1:
-                    case SqlDatabaseType.WorkersAnalyticsEngine: {
+                    case SqlDatabaseType.WorkersAnalyticsEngine:
+                    case SqlDatabaseType.R2Sql: {
                         sql = `SELECT DISTINCT ${column} FROM ${table} LIMIT ${limit};`
                         break
                     }
@@ -2113,8 +2114,7 @@ WHERE
                         sql = `SELECT DISTINCT TOP ${limit} ${column} FROM ${table};`
                         break
                     }
-                    // R2 SQL / ManticoreSearch does not support DISTINCT
-                    case SqlDatabaseType.R2Sql:
+                    // ManticoreSearch does not support `DISTINCT`
                     case SqlDatabaseType.ManticoreSearch: {
                         sql = `SELECT ${column} FROM ${table} LIMIT ${limit};`
                         break
