@@ -72,6 +72,7 @@ const isKv = (type: DatabaseType): boolean => {
         case SqlDatabaseType.Sqlite:
         case SqlDatabaseType.SqlCipher:
         case SqlDatabaseType.Postgres:
+        case SqlDatabaseType.PGlite:
         case SqlDatabaseType.CockroachDB:
         case SqlDatabaseType.QuestDB:
         case SqlDatabaseType.MySql:

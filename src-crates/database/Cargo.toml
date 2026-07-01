@@ -24,6 +24,7 @@ workers-analytics-engine = { path = "../workers-analytics-engine" }
 r2sql = { path = "../r2sql" }
 mysql = { path = "../mysql" }
 pgsq = { path = "../pgsq" }
+pglite = { path = "../pglite" }
 duckdb = { path = "../duckdb" }
 chdb = { path = "../chdb" }
 clickhouse = { path = "../clickhouse" }

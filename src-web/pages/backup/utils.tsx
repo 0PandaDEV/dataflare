@@ -116,6 +116,7 @@ export const toBackupConfig = async (conn: Connection): Promise<BackupConfig> =>
             }
         }
         case SqlDatabaseType.SqlCipher:
+        case SqlDatabaseType.PGlite:
         case SqlDatabaseType.CockroachDB:
         case SqlDatabaseType.QuestDB:
         case SqlDatabaseType.MariaDB:

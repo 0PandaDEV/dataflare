@@ -1,0 +1,245 @@
+mod ffi;
+
+use dylib::Dylib;
+use dylib::driver::{Error, Result};
+use dylib::ffi::{ErrorMessage, StringRef};
+use ffi::*;
+use query::{Query, QueryColumn, Value};
+use std::{ffi::c_void, sync::Mutex, time::Instant};
+
+// NOTE:
+// Do not update manually
+// Use `node ./src-dylib/driver-update.mjs` update the sha256 values.
+
+const PGLITE_DRIVER_VERSION: &str = "20260701";
+#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
+const PGLITE_SHA256: &str = "f5506509db8ff9b2e9bdfd047a254d8ecd5f07f88c1df2dd0eda0ff28bd19665";
+#[cfg(all(target_os = "macos", target_arch = "x86_64"))]
+const PGLITE_SHA256: &str = "afce88b7be96632a4e76e48eef5d485a0d9ffceb83573f5dfef6a7dd7d808f8e";
+#[cfg(all(target_os = "linux", target_arch = "aarch64", target_env = "gnu"))]
+const PGLITE_SHA256: &str = "96f1edd85e239a40f71cf5a774c960a657f52842c5e80daac2d7eed3ba392192";
+#[cfg(all(target_os = "linux", target_arch = "x86_64", target_env = "gnu"))]
+const PGLITE_SHA256: &str = "f577e617c8044b1cfb4e7423228a4883d77331cbaecfaa0b206167046e3fae77";
+#[cfg(all(target_os = "windows", target_arch = "aarch64", target_env = "msvc"))]
+const PGLITE_SHA256: &str = "bd7898e9598d762ce622699b624b00661b7805a1410a26340d32be2b0bcccb47";
+#[cfg(all(target_os = "windows", target_arch = "x86_64", target_env = "msvc"))]
+const PGLITE_SHA256: &str = "0a6494abce03ee5fd0dc9c1c1a43be82cff72339c148eccb0d74c72ff0893e89";
+
+#[derive(Debug)]
+pub struct Connection {
+    conn: Mutex<*mut c_void>,
+    dylib: Dylib,
+}
+
+unsafe impl Send for Connection {}
+unsafe impl Sync for Connection {}
+
+impl Drop for Connection {
+    fn drop(&mut self) {
+        let _ = self.close();
+    }
+}
+
+fn free_error(dylib: &Dylib, error: ErrorMessage) -> Result<Option<Error>, Error> {
+    if !error.is_null() {
+        let message = error.as_str().to_string();
+        dylib.symbol::<FreeErrorFn>(FREE_ERROR)?(error);
+        return Ok(Some(Error::Message(message)));
+    }
+    Ok(None)
+}
+
+impl Connection {
+    pub async fn connect(path: &str) -> Result<Self> {
+        let dylib = Dylib::try_load("pglite", PGLITE_DRIVER_VERSION, PGLITE_SHA256).await?;
+        let options = ConnectOptions {
+            path: StringRef::new(path),
+        };
+        let mut error = ErrorMessage::null();
+        let conn = dylib.symbol::<ConnectFn>(CONNECT)?(options, &mut error);
+        if let Some(error) = free_error(&dylib, error)? {
+            return Err(error);
+        }
+        Ok(Self {
+            conn: Mutex::new(conn),
+            dylib,
+        })
+    }
+
+    fn close(&self) -> Result<(), Error> {
+        let conn = self.conn.lock().map_err(|_| Error::Mutex)?;
+        self.dylib.symbol::<CloseFn>(CLOSE)?(*conn);
+        Ok(())
+    }
+
+    pub fn execute(&self, sql: &str) -> Result<(), Error> {
+        let conn = self.conn.lock().map_err(|_| Error::Mutex)?;
+        let mut error = ErrorMessage::null();
+        self.dylib.symbol::<ExecuteFn>(EXECUTE)?(*conn, StringRef::new(sql), &mut error);
+        if let Some(error) = free_error(&self.dylib, error)? {
+            return Err(error);
+        }
+        Ok(())
+    }
+
+    pub fn transaction(&self, sqls: &[String]) -> Result<(), Error> {
+        let conn = self.conn.lock().map_err(|_| Error::Mutex)?;
+        let sqls = sqls
+            .iter()
+            .map(|sql| StringRef::new(sql))
+            .collect::<Vec<_>>();
+        let mut error = ErrorMessage::null();
+        self.dylib.symbol::<TransactionFn>(TRANSACTION)?(
+            *conn,
+            sqls.as_ptr(),
+            sqls.len(),
+            &mut error,
+        );
+        if let Some(error) = free_error(&self.dylib, error)? {
+            return Err(error);
+        }
+        Ok(())
+    }
+
+    pub fn query(&self, sql: &str) -> Result<Query, Error> {
+        let conn = self.conn.lock().map_err(|_| Error::Mutex)?;
+        let start = Instant::now();
+        let mut error = ErrorMessage::null();
+        let query = self.dylib.symbol::<QueryFn>(QUERY)?(*conn, StringRef::new(sql), &mut error);
+        if let Some(error) = free_error(&self.dylib, error)? {
+            return Err(error);
+        }
+
+        let meta = self.dylib.symbol::<QueryMetaFn>(QUERY_META)?(query);
+        let query_column = self.dylib.symbol::<QueryColumnFn>(QUERY_COLUMN)?;
+        let query_value = self.dylib.symbol::<QueryValueFn>(QUERY_VALUE)?;
+        let columns = (0..meta.column_count)
+            .map(|index| {
+                let column = query_column(query, index);
+                QueryColumn {
+                    name: column.name.as_str().to_string(),
+                    datatype: column.datatype.as_str().to_string(),
+                }
+            })
+            .collect::<Vec<_>>();
+
+        let mut rows = Vec::with_capacity(meta.row_count);
+        for row_index in 0..meta.row_count {
+            let mut row = Vec::with_capacity(meta.column_count);
+            for column_index in 0..meta.column_count {
+                let data = query_value(query, row_index, column_index);
+                row.push(unsafe {
+                    match data.kind {
+                        DataKind::Null => Value::Null,
+                        DataKind::Bool => Value::Bool(data.value.bool),
+                        DataKind::I64 => Value::I64(data.value.i64),
+                        DataKind::F64 => Value::F64(data.value.f64),
+                        DataKind::U32 => Value::U32(data.value.u32),
+                        DataKind::Bytes => Value::from_bytes(data.value.bytes.as_bytes().to_vec()),
+                        DataKind::String => Value::String(data.value.string.as_str().to_string()),
+                    }
+                });
+            }
+            rows.push(row);
+        }
+        self.dylib.symbol::<FreeQueryFn>(FREE_QUERY)?(query);
+
+        Ok(Query {
+            columns,
+            rows,
+            rows_affected: Some(meta.rows_affected),
+            duration: start.elapsed().as_millis() as u32,
+        })
+    }
+
+    pub fn select(&self, sql: &str) -> Result<Vec<Vec<Value>>, Error> {
+        self.query(sql).map(|query| query.rows)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::*;
+
+    fn database_path(name: &str) -> String {
+        std::env::temp_dir()
+            .join(format!("dataflare-pglite-{name}-{}", std::process::id()))
+            .to_string_lossy()
+            .to_string()
+    }
+
+    #[tokio::test]
+    async fn query_returns_typed_values() {
+        let path = database_path("query");
+        let _ = std::fs::remove_dir_all(&path);
+        let connection = Connection::connect(&path).await.unwrap();
+        let mut query = connection
+            .query(
+                "SELECT 42::int4 AS number, true AS enabled, 'hello'::text AS message, decode('CAFE', 'hex') AS bytes",
+            )
+            .unwrap();
+
+        assert_eq!(
+            query.columns,
+            [
+                QueryColumn::new("number", "int4"),
+                QueryColumn::new("enabled", "bool"),
+                QueryColumn::new("message", "text"),
+                QueryColumn::new("bytes", "bytea"),
+            ]
+        );
+        assert_eq!(
+            query.rows.remove(0),
+            [
+                Value::I64(42),
+                Value::Bool(true),
+                Value::String("hello".into()),
+                Value::from_bytes(vec![0xca, 0xfe]),
+            ]
+        );
+        drop(connection);
+        let _ = std::fs::remove_dir_all(path);
+    }
+
+    #[tokio::test]
+    async fn information_schema_is_available() {
+        let path = database_path("information-schema");
+        let _ = std::fs::remove_dir_all(&path);
+        let connection = Connection::connect(&path).await.unwrap();
+
+        let rows = connection
+            .select(
+                "
+                SELECT c.schema_name, t.table_name
+                FROM information_schema.schemata AS c
+                LEFT JOIN information_schema.tables AS t ON t.table_schema = c.schema_name
+                ORDER BY c.schema_name, t.table_name
+                ",
+            )
+            .unwrap();
+
+        assert!(!rows.is_empty());
+        drop(connection);
+        let _ = std::fs::remove_dir_all(path);
+    }
+
+    #[tokio::test]
+    async fn transaction_commits_statements() {
+        let path = database_path("transaction");
+        let _ = std::fs::remove_dir_all(&path);
+        let connection = Connection::connect(&path).await.unwrap();
+        connection
+            .transaction(&[
+                "CREATE TABLE items (id integer PRIMARY KEY, name text NOT NULL)".into(),
+                "INSERT INTO items VALUES (1, 'one')".into(),
+            ])
+            .unwrap();
+
+        assert_eq!(
+            connection.select("SELECT name FROM items").unwrap(),
+            [vec![Value::String("one".into())]]
+        );
+        drop(connection);
+        let _ = std::fs::remove_dir_all(path);
+    }
+}

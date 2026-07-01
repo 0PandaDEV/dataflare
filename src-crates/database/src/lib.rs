@@ -9,6 +9,7 @@ mod echolite;
 mod error;
 mod mssql;
 mod mysql;
+mod pglite;
 mod postgres;
 mod presto;
 mod r2sql;
@@ -34,6 +35,7 @@ use kvdb::{
 };
 use mssql::MsSqlConnection;
 use mysql::MySqlConnection;
+use pglite::PGliteConnection;
 use postgres::{COCKROACH_DEFAULT_PORT, POSTGRES_DEFAULT_PORT, PostgresConnection};
 use presto::PrestoConnection;
 use query::{Query, Value};
@@ -59,6 +61,7 @@ pub enum Database {
     Sqlite(SqliteConnection),
     SqlCipher(SqlCipherConnection),
     Postgres(PostgresConnection),
+    PGlite(PGliteConnection),
     MySql(MySqlConnection),
     MsSql(MsSqlConnection),
     ClickHouse(ClickHouseConnection),
@@ -85,6 +88,7 @@ impl Database {
             ConnectionConfig::SQLite(config) => SqliteConnection::test(config).await,
             ConnectionConfig::SQLCipher(config) => SqlCipherConnection::test(config).await,
             ConnectionConfig::PostgreSQL(config) => PostgresConnection::test_postgres(config, POSTGRES_DEFAULT_PORT).await,
+            ConnectionConfig::PGlite(config) => PGliteConnection::test(config).await,
             ConnectionConfig::CockroachDB(config) => PostgresConnection::test_postgres(config, COCKROACH_DEFAULT_PORT).await,
             ConnectionConfig::QuestDB(config) => PostgresConnection::test_questdb(config).await,
             ConnectionConfig::MySQL(config) => MySqlConnection::test(config).await,
@@ -128,6 +132,7 @@ impl Database {
             ConnectionConfig::SQLite(config) => SqliteConnection::connect(config).await,
             ConnectionConfig::SQLCipher(config) => SqlCipherConnection::connect(config).await,
             ConnectionConfig::PostgreSQL(config) => PostgresConnection::connect_postgres(config, POSTGRES_DEFAULT_PORT).await,
+            ConnectionConfig::PGlite(config) => PGliteConnection::connect(config).await,
             ConnectionConfig::CockroachDB(config) => PostgresConnection::connect_postgres(config, COCKROACH_DEFAULT_PORT).await,
             ConnectionConfig::QuestDB(config) => PostgresConnection::connect_questdb(config).await,
             ConnectionConfig::MySQL(config) => MySqlConnection::connect(config).await,
@@ -170,6 +175,7 @@ impl Database {
             Self::Sqlite(db) => db.select(sql).await,
             Self::SqlCipher(db) => db.select(sql).await,
             Self::Postgres(db) => db.select(sql).await,
+            Self::PGlite(db) => db.select(sql).await,
             Self::MySql(db) => db.select(sql).await,
             Self::MsSql(db) => db.select(sql).await,
             Self::ClickHouse(db) => db.select(sql).await,
@@ -195,6 +201,7 @@ impl Database {
             Self::Sqlite(db) => db.execute(sql).await,
             Self::SqlCipher(db) => db.execute(sql).await,
             Self::Postgres(db) => db.execute(sql).await,
+            Self::PGlite(db) => db.execute(sql).await,
             Self::MySql(db) => db.execute(sql).await,
             Self::MsSql(db) => db.execute(sql).await,
             Self::ClickHouse(db) => db.execute(sql).await,
@@ -220,6 +227,7 @@ impl Database {
             Self::Sqlite(db) => db.transaction(sqls).await,
             Self::SqlCipher(db) => db.transaction(sqls).await,
             Self::Postgres(db) => db.transaction(sqls).await,
+            Self::PGlite(db) => db.transaction(sqls).await,
             Self::MySql(db) => db.transaction(sqls).await,
             Self::MsSql(db) => db.transaction(sqls).await,
             Self::ClickHouse(db) => db.transaction(sqls).await,
@@ -245,6 +253,7 @@ impl Database {
             Self::Sqlite(db) => db.query(sql).await,
             Self::SqlCipher(db) => db.query(sql).await,
             Self::Postgres(db) => db.query(sql).await,
+            Self::PGlite(db) => db.query(sql).await,
             Self::MySql(db) => db.query(sql).await,
             Self::MsSql(db) => db.query(sql).await,
             Self::ClickHouse(db) => db.query(sql).await,
@@ -270,6 +279,7 @@ impl Database {
             Self::Sqlite(db) => db.batch_insert(insert).await,
             Self::SqlCipher(db) => db.batch_insert(insert).await,
             Self::Postgres(db) => db.batch_insert(insert).await,
+            Self::PGlite(db) => db.batch_insert(insert).await,
             Self::MySql(db) => db.batch_insert(insert).await,
             Self::MsSql(db) => db.batch_insert(insert).await,
             Self::ClickHouse(db) => db.batch_insert(insert).await,

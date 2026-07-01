@@ -20,6 +20,7 @@ const defaultSchema = (config: SqlDatabaseConfig): string => {
             return 'main'
         }
         case SqlDatabaseType.Postgres:
+        case SqlDatabaseType.PGlite:
         case SqlDatabaseType.CockroachDB: {
             return 'public'
         }

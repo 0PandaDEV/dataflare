@@ -29,6 +29,7 @@ import { EchoLiteConnection } from './options-editor/echolite'
 import { ManticoreSearchConnection } from './options-editor/manticore-search'
 import { MsSqlConnection } from './options-editor/mssql'
 import { MySqlConnection } from './options-editor/mysql'
+import { PGliteConnection } from './options-editor/pglite'
 import { PostgresConnection } from './options-editor/postgres'
 import { PrestoConnection } from './options-editor/presto'
 import { QuestDbConnection } from './options-editor/questdb'
@@ -121,6 +122,7 @@ const CurrentConnection = (props: ConnectionEditorOptions<any>): JSX.Element => 
         [SqlDatabaseType.SqlCipher]: <SqlCipherConnection {...props} />,
         [SqlDatabaseType.DuckDB]: <DuckDbConnection {...props} />,
         [SqlDatabaseType.Postgres]: <PostgresConnection {...props} defaultPort={5432} />,
+        [SqlDatabaseType.PGlite]: <PGliteConnection {...props} />,
         [SqlDatabaseType.CockroachDB]: <PostgresConnection {...props} defaultPort={26257} />,
         [SqlDatabaseType.QuestDB]: <QuestDbConnection {...props} />,
         [SqlDatabaseType.MySql]: <MySqlConnection {...props} />,

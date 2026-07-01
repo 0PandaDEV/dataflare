@@ -10,6 +10,7 @@ pub enum ConnectionConfig {
     SQLite(SqliteConfig),
     SQLCipher(SqlCipherConfig),
     PostgreSQL(PostgresConfig),
+    PGlite(PGliteConfig),
     CockroachDB(PostgresConfig),
     QuestDB(QuestDbConfig),
     MySQL(MySqlConfig),
@@ -70,6 +71,7 @@ pub enum SqlDatabaseType {
     SQLite,
     SQLCipher,
     PostgreSQL,
+    PGlite,
     CockroachDB,
     QuestDB,
     MySQL,
@@ -332,6 +334,13 @@ pub struct PostgresConfig {
     pub tls: PostgresTlsConfig,
     #[secret]
     pub proxy: Option<ProxyConfig>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, ResolveSecrets)]
+pub struct PGliteConfig {
+    pub path: String,
+    pub readonly: bool,
+    pub initial: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ResolveSecrets)]

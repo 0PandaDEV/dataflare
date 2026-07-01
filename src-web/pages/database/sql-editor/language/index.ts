@@ -37,6 +37,7 @@ export const setMonarchTokensProvider = async (language: LanguageHighLight) => {
     let def: monaco.languages.IMonarchLanguage
     switch (language.databaseType) {
         case SqlDatabaseType.Postgres:
+        case SqlDatabaseType.PGlite:
         case SqlDatabaseType.CockroachDB:
         case SqlDatabaseType.ClickHouse:
         case SqlDatabaseType.ChDb:

@@ -13,9 +13,10 @@ fn to_dialect(db: SqlDatabaseType) -> Box<dyn Dialect> {
         | SqlDatabaseType::Rqlite
         | SqlDatabaseType::EchoLite
         | SqlDatabaseType::CloudflareD1 => Box::new(SQLiteDialect {}),
-        SqlDatabaseType::PostgreSQL | SqlDatabaseType::CockroachDB | SqlDatabaseType::QuestDB => {
-            Box::new(PostgreSqlDialect {})
-        }
+        SqlDatabaseType::PostgreSQL
+        | SqlDatabaseType::PGlite
+        | SqlDatabaseType::CockroachDB
+        | SqlDatabaseType::QuestDB => Box::new(PostgreSqlDialect {}),
         SqlDatabaseType::MySQL | SqlDatabaseType::MariaDB | SqlDatabaseType::ManticoreSearch => {
             Box::new(MySqlDialect {})
         }
