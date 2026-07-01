@@ -54,6 +54,7 @@ export const fetchModels = async (config: ProviderConfig): Promise<ProviderModel
         case ProviderType.OpenAI:
         case ProviderType.VercelAIGateway:
         case ProviderType.Ollama:
+        case ProviderType.Requesty:
         case ProviderType.OpenAICompatible: {
             const schema = z.object({
                 data: z.array(
@@ -70,8 +71,7 @@ export const fetchModels = async (config: ProviderConfig): Promise<ProviderModel
             return fetchJSON(`${baseURL}/models`, schema, headers).then((json) => json.data)
         }
         case ProviderType.Mistral:
-        case ProviderType.OpenRouter:
-        case ProviderType.Requesty: {
+        case ProviderType.OpenRouter: {
             const schema = z.object({
                 data: z.array(
                     z.object({
