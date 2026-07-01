@@ -150,11 +150,13 @@ export const Readonly = ({ secure, readonly, onChange }: ReadonlyProps) => {
 export const DatabasePathSelect = ({
     path,
     onChange,
-    usePathAsLabel = false
+    usePathAsLabel = false,
+    placeholder
 }: {
     path: string
     onChange: (path: string) => void
     usePathAsLabel?: boolean
+    placeholder?: string
 }) => {
     const onSelect = async () => {
         let files = await open({})
@@ -168,7 +170,7 @@ export const DatabasePathSelect = ({
         <Row label={usePathAsLabel ? t('path') : t('database')}>
             <Textarea
                 className='h-20 flex-1 resize-none break-all py-1 pr-9'
-                placeholder=':memory:'
+                placeholder={placeholder ?? ':memory:'}
                 value={path}
                 onChange={(e) => onChange(e.target.value)}
             />

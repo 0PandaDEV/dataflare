@@ -51,6 +51,8 @@ fn free_error(dylib: &Dylib, error: ErrorMessage) -> Result<Option<Error>, Error
 
 impl Connection {
     pub async fn connect(path: &str) -> Result<Self> {
+        Connection::check_path(path)?;
+
         let dylib = Dylib::try_load("pglite", PGLITE_DRIVER_VERSION, PGLITE_SHA256).await?;
         let options = ConnectOptions {
             path: StringRef::new(path),
@@ -64,6 +66,16 @@ impl Connection {
             conn: Mutex::new(conn),
             dylib,
         })
+    }
+
+    fn check_path(path: &str) -> Result<()> {
+        let path = path.trim();
+        if path.is_empty() || path == ":memory:" {
+            return Err(Error::Message(
+                "PGlite path cannot be empty or :memory:".into(),
+            ));
+        }
+        Ok(())
     }
 
     fn close(&self) -> Result<(), Error> {

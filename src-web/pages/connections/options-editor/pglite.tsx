@@ -11,7 +11,12 @@ export const PGliteConnection = ({ data, onChange }: ConnectionEditorOptions<PGl
     const general = (
         <>
             <Item label={t('name')} value={name} onChange={setName} />
-            <DatabasePathSelect path={options.path} onChange={(path) => setOpt('path', path)} />
+            <DatabasePathSelect
+                path={options.path}
+                placeholder='/data/dir'
+                onChange={(path) => setOpt('path', path)}
+                usePathAsLabel
+            />
         </>
     )
 
