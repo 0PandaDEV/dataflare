@@ -1,3 +1,16 @@
+## v3.1.3
+
+**Published:** `2026-07-01T12:58:02Z`
+
+**Changes**
+
+- Add support for `PGlite` <sup>experimental</sup>
+- Upgrade `DuckDB` to v1.5.4
+- Add `Requesty` as an AI provider
+- Update Tauri dependencies and improve window drag regions
+- Add more `R2 SQL` functions and keywords
+- Fix database directory selection for `PGlite` and `chDB`
+
 ## v3.1.2
 
 **Published:** `2026-06-15T07:19:12Z`
