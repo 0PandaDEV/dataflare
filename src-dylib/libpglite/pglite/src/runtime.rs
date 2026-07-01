@@ -33,17 +33,21 @@ impl Runtime {
         if !paths.is_cluster_initialized() {
             let mut initializer = PostgresMod::new(paths.clone(), "template1")?;
             initializer.ensure_cluster()?;
+            let transport = Transport::prepare(&mut initializer)?;
+            shutdown_postgres(&mut initializer, &transport)?;
         }
 
         Self::ensure_default_database(paths.clone())?;
         let mut postgres = PostgresMod::new(paths, "postgres")?;
         postgres.ensure_cluster()?;
         let transport = Transport::prepare(&mut postgres)?;
-        Ok(Self {
+        let mut runtime = Self {
             postgres,
             transport,
             _runtime_dir: runtime_dir,
-        })
+        };
+        runtime.ensure_public_schema()?;
+        Ok(runtime)
     }
 
     pub(crate) fn query(&mut self, sql: &str) -> Result<Vec<QueryResult>> {
@@ -80,7 +84,7 @@ impl Runtime {
         let transport = Transport::prepare(&mut postgres)?;
         self.postgres = postgres;
         self.transport = transport;
-        Ok(())
+        self.ensure_public_schema()
     }
 
     fn ensure_default_database(paths: PglitePaths) -> Result<()> {
@@ -98,6 +102,28 @@ impl Runtime {
             parse_response(response.bytes, response.trapped)?;
         }
         shutdown_postgres(&mut postgres, &transport)
+    }
+
+    fn ensure_public_schema(&mut self) -> Result<()> {
+        let response = send_query(
+            &mut self.postgres,
+            &self.transport,
+            "SELECT to_regnamespace('public')",
+        )?;
+        let results = parse_response(response.bytes, response.trapped)?;
+        let missing = results[0].rows == vec![vec![None]];
+        let sql = if missing {
+            "
+            CREATE SCHEMA public;
+            GRANT ALL ON SCHEMA public TO PUBLIC;
+            SET search_path TO \"$user\", public;
+            "
+        } else {
+            "SET search_path TO \"$user\", public"
+        };
+        let response = send_query(&mut self.postgres, &self.transport, sql)?;
+        parse_response(response.bytes, response.trapped)?;
+        Ok(())
     }
 
     fn sync_to_fs(&self) -> Result<()> {

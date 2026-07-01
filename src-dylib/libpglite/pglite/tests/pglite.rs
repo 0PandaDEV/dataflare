@@ -98,6 +98,141 @@ mod tests {
     }
 
     #[test]
+    fn returns_results_larger_than_the_transport_buffer() {
+        let (_dir, mut db) = database();
+
+        let results = db.query("SELECT repeat('x', 1024 * 1024 * 2)").unwrap();
+
+        assert_eq!(
+            results[0].rows[0][0].as_ref().unwrap().len(),
+            2 * 1024 * 1024
+        );
+    }
+
+    #[test]
+    fn accepts_queries_larger_than_the_transport_buffer() {
+        let (_dir, mut db) = database();
+        let value = "x".repeat(2 * 1024 * 1024);
+
+        let results = db.query(&format!("SELECT length('{value}')")).unwrap();
+
+        assert_eq!(results[0].rows, vec![vec![Some("2097152".to_owned())]]);
+    }
+
+    #[test]
+    fn lists_schemas_tables_and_views_from_information_schema() {
+        let (_dir, mut db) = database();
+        db.query(
+            "
+            CREATE SCHEMA app;
+            CREATE TABLE app.items (id integer PRIMARY KEY);
+            CREATE VIEW app.item_ids AS SELECT id FROM app.items;
+            ",
+        )
+        .unwrap();
+
+        let results = db
+            .query(
+                "
+                SELECT
+                    c.schema_name,
+                    t.table_name,
+                    CASE WHEN table_type = 'VIEW' THEN 'view' ELSE 'table' END
+                FROM
+                    INFORMATION_SCHEMA.SCHEMATA as c
+                    LEFT JOIN INFORMATION_SCHEMA.TABLES as t ON t.table_schema = c.schema_name
+                ORDER BY c.schema_name, t.table_name;
+                ",
+            )
+            .unwrap();
+
+        assert!(results[0].rows.contains(&vec![
+            Some("app".to_owned()),
+            Some("item_ids".to_owned()),
+            Some("view".to_owned()),
+        ]));
+        assert!(results[0].rows.contains(&vec![
+            Some("app".to_owned()),
+            Some("items".to_owned()),
+            Some("table".to_owned()),
+        ]));
+    }
+
+    #[test]
+    fn information_schema_survives_reopening() {
+        let dir = tempdir().unwrap();
+        {
+            let mut db = Connection::open_with(dir.path()).unwrap();
+            db.query("CREATE TABLE saved (id integer, note text)")
+                .unwrap();
+        }
+
+        let mut db = Connection::open_with(dir.path()).unwrap();
+        let results = db
+            .query(
+                "
+                SELECT table_schema, table_name, column_name
+                FROM information_schema.columns
+                WHERE table_name = 'saved'
+                ORDER BY ordinal_position
+                ",
+            )
+            .unwrap();
+
+        assert_eq!(
+            results[0].rows,
+            vec![
+                vec![
+                    Some("public".to_owned()),
+                    Some("saved".to_owned()),
+                    Some("id".to_owned()),
+                ],
+                vec![
+                    Some("public".to_owned()),
+                    Some("saved".to_owned()),
+                    Some("note".to_owned()),
+                ],
+            ]
+        );
+    }
+
+    #[test]
+    fn information_schema_preserves_quoted_identifiers_and_empty_schemas() {
+        let (_dir, mut db) = database();
+        db.query(
+            "
+            CREATE SCHEMA empty_schema;
+            CREATE SCHEMA \"odd schema\";
+            CREATE TABLE \"odd schema\".\"select table\" (\"value space\" text);
+            ",
+        )
+        .unwrap();
+
+        let results = db
+            .query(
+                "
+                SELECT c.schema_name, t.table_name
+                FROM information_schema.schemata AS c
+                LEFT JOIN information_schema.tables AS t ON t.table_schema = c.schema_name
+                WHERE c.schema_name IN ('empty_schema', 'odd schema')
+                ORDER BY c.schema_name, t.table_name
+                ",
+            )
+            .unwrap();
+
+        assert_eq!(
+            results[0].rows,
+            vec![
+                vec![Some("empty_schema".to_owned()), None],
+                vec![
+                    Some("odd schema".to_owned()),
+                    Some("select table".to_owned()),
+                ],
+            ]
+        );
+    }
+
+    #[test]
     fn complex_types_include_arrays_json_range_and_custom_type() {
         let (_dir, mut db) = database();
 

@@ -42,7 +42,8 @@ impl Transport {
             Transport::Cma {
                 buffer_addr,
                 buffer_len,
-            } => send_cma(pg, *buffer_addr, *buffer_len, payload),
+            } if payload.len() <= *buffer_len => send_cma(pg, *buffer_addr, *buffer_len, payload),
+            Transport::Cma { .. } => send_file(pg, payload),
             Transport::File => send_file(pg, payload),
         }
     }
@@ -71,6 +72,10 @@ fn send_cma(
     let execution = pg.interactive_one();
 
     let trapped = execution.is_err();
+    if let Some(bytes) = read_file_response(pg)? {
+        pg.interactive_write(0)?;
+        return Ok(TransportResponse { bytes, trapped });
+    }
     let available = pg.interactive_read()?;
     if available <= 0 {
         if trapped {
@@ -152,7 +157,7 @@ fn message_sequence_len(bytes: &[u8]) -> Option<usize> {
 }
 
 fn send_file(pg: &mut PostgresMod, payload: &[u8]) -> Result<TransportResponse> {
-    let base = pg.paths().pgroot.join("pglite/base");
+    let base = &pg.paths().pgdata;
     let lock_in = base.join(".s.PGSQL.5432.lck.in");
     let in_path = base.join(".s.PGSQL.5432.in");
     let out_path = base.join(".s.PGSQL.5432.out");
@@ -166,6 +171,8 @@ fn send_file(pg: &mut PostgresMod, payload: &[u8]) -> Result<TransportResponse> 
     fs::rename(&lock_in, &in_path)
         .with_context(|| format!("rename {} -> {}", lock_in.display(), in_path.display()))?;
 
+    let execution = pg.interactive_one();
+    let trapped = execution.is_err();
     let start = Instant::now();
     let timeout = Duration::from_secs(5);
     loop {
@@ -173,14 +180,24 @@ fn send_file(pg: &mut PostgresMod, payload: &[u8]) -> Result<TransportResponse> 
             let bytes = fs::read(&out_path)
                 .with_context(|| format!("read response from {}", out_path.display()))?;
             let _ = fs::remove_file(&out_path);
-            return Ok(TransportResponse {
-                bytes,
-                trapped: false,
-            });
+            return Ok(TransportResponse { bytes, trapped });
         }
         if start.elapsed() > timeout {
+            execution?;
             bail!("file transport timed out waiting for response");
         }
         thread::sleep(Duration::from_millis(2));
     }
+}
+
+fn read_file_response(pg: &PostgresMod) -> Result<Option<Vec<u8>>> {
+    let out_path = pg.paths().pgdata.join(".s.PGSQL.5432.out");
+    if !out_path.exists() {
+        return Ok(None);
+    }
+    let bytes = fs::read(&out_path)
+        .with_context(|| format!("read response from {}", out_path.display()))?;
+    fs::remove_file(&out_path)
+        .with_context(|| format!("remove response {}", out_path.display()))?;
+    Ok(Some(bytes))
 }
