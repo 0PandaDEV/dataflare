@@ -151,15 +151,17 @@ export const DatabasePathSelect = ({
     path,
     onChange,
     usePathAsLabel = false,
-    placeholder
+    placeholder,
+    directory = false
 }: {
     path: string
     onChange: (path: string) => void
     usePathAsLabel?: boolean
     placeholder?: string
+    directory?: boolean
 }) => {
     const onSelect = async () => {
-        let files = await open({})
+        let files = await open({ directory })
         if (files === null) {
             return
         }

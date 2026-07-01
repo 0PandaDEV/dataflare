@@ -12,6 +12,7 @@ export const ChDbConnection = ({ data, onChange }: ConnectionEditorOptions<ChDbC
         <>
             <Item label={t('name')} value={name} onChange={setName} />
             <DatabasePathSelect
+                directory
                 usePathAsLabel
                 path={options.path}
                 onChange={(path) => setOpt('path', path)}
