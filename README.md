@@ -53,6 +53,7 @@ Please visit Dataflare website to download: https://dataflare.app/download
 - [MariaDB](https://github.com/MariaDB/server)
 - [MySQL](https://github.com/mysql/mysql-server)
 - [PostgreSQL](https://github.com/postgres/postgres)
+- [PGlite](https://github.com/electric-sql/pglite)
 - [Presto](https://github.com/prestodb/presto)
 - [QuestDB](https://github.com/questdb/questdb)
 - [R2 SQL](https://developers.cloudflare.com/r2-sql/)
