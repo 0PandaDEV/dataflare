@@ -128,7 +128,7 @@ export const TableList = () => {
                 {
                     label: t('duplicate'),
                     disabled: readonly,
-                    hidden: !db.supportDuplicateTable(),
+                    hidden: !db.features.duplicateTable,
                     onClick() {
                         setDuplicate(entry)
                     }

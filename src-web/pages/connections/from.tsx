@@ -46,7 +46,6 @@ export const Item = ({
                     placeholder={placeholder}
                     value={value}
                     onChange={(val) => onChange(val)}
-                    secretResolve
                 />
             ) : (
                 <TextInput
@@ -150,13 +149,19 @@ export const Readonly = ({ secure, readonly, onChange }: ReadonlyProps) => {
 
 export const DatabasePathSelect = ({
     path,
-    onChange
+    onChange,
+    usePathAsLabel = false,
+    placeholder,
+    directory = false
 }: {
     path: string
     onChange: (path: string) => void
+    usePathAsLabel?: boolean
+    placeholder?: string
+    directory?: boolean
 }) => {
     const onSelect = async () => {
-        let files = await open({})
+        let files = await open({ directory })
         if (files === null) {
             return
         }
@@ -164,10 +169,10 @@ export const DatabasePathSelect = ({
     }
 
     return (
-        <Row label={t('database')}>
+        <Row label={usePathAsLabel ? t('path') : t('database')}>
             <Textarea
                 className='h-20 flex-1 resize-none break-all py-1 pr-9'
-                placeholder=':memory:'
+                placeholder={placeholder ?? ':memory:'}
                 value={path}
                 onChange={(e) => onChange(e.target.value)}
             />

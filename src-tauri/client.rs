@@ -276,6 +276,13 @@ pub async fn delete_provider(client: State<'_, Client>, id: i64) -> Result<(), E
 }
 
 #[command]
+pub async fn provider_resolve_secret(value: String) -> Result<String, String> {
+    secret_resolve::resolve_secret(&value)
+        .await
+        .map_err(|err| err.to_string())
+}
+
+#[command]
 pub async fn chat_list(client: State<'_, Client>, cid: String) -> Result<Vec<ChatItem>, Error> {
     client.chat_list(cid).await
 }

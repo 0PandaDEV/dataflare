@@ -1,15 +1,16 @@
 import crypto from 'crypto'
 
-// The drivers for SQLCipher, LibSQL, Turso, DuckDB and chDB are dynamically loaded
+// The drivers for SQLCipher, LibSQL, Turso, DuckDB, chDB and PGlite are dynamically loaded
 // This script extracts the sha256 values for the corresponding platform
 // src-crates/sqlcipher/src/lib.rs
 // src-crates/libsql-local/src/lib.rs
 // src-crates/turso-local/src/lib.rs
 // src-crates/duckdb/src/lib.rs
 // src-crates/chdb/src/lib.rs
+// src-crates/pglite/src/lib.rs
 
-const name = 'chdb'
-const version = '20260603'
+const name = 'pglite'
+const version = '20260701'
 
 const base = 'https://assets.dataflare.app/drivers/'
 const items = [
@@ -57,9 +58,10 @@ const sha256 = async ({ prefix, target, suffix, cfg }) => {
     let hex = ''
     switch (res.status) {
         case 200: {
-            const buffer = new Uint8Array(await res.arrayBuffer())
             const hash = crypto.createHash('sha256')
-            hash.update(buffer)
+            for await (const chunk of res.body) {
+                hash.update(chunk)
+            }
             hex = `"${hash.digest('hex')}";`
             break
         }

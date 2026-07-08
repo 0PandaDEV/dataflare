@@ -52,6 +52,7 @@ const useSqlList = (search: string) => {
     const { data: querys } = useQuerys()
 
     const all = useMemo(() => {
+        const features = db.features
         const suggestions: SearchItem[] = [
             {
                 type: SearchType.NewQuery,
@@ -94,21 +95,21 @@ const useSqlList = (search: string) => {
                     title: t('functionManager'),
                     icon: <FunctionIcon />
                 } as SearchItem
-            ].filter(() => db.supportFunctions()),
+            ].filter(() => features.functions),
             ...[
                 {
                     type: SearchType.TriggerManager,
                     title: t('triggerManager'),
                     icon: <TriggerIcon />
                 } as SearchItem
-            ].filter(() => db.supportTriggers()),
+            ].filter(() => features.triggers),
             ...[
                 {
                     type: SearchType.ExtensionManager,
                     title: t('extensionManager'),
                     icon: <ExtensionIcon />
                 } as SearchItem
-            ].filter(() => db.supportExtensions()),
+            ].filter(() => features.extensions),
             {
                 type: SearchType.BackupDatabase,
                 title: t('backupDatabase'),

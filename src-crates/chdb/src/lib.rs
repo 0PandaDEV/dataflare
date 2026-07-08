@@ -5,21 +5,22 @@ use dylib::driver::{Error, Result};
 use dylib::ffi::{ErrorMessage, StringRef};
 use ffi::*;
 use query::{Query, QueryColumn, Value};
-use std::{ffi::c_void, sync::Mutex};
+use std::ffi::c_void;
+use std::sync::Mutex;
 
 // NOTE:
 // Do not update manually
 // Use `node ./src-dylib/driver-update.mjs` update the sha256 values.
 
-const CHDB_DRIVER_VERSION: &str = "20260603";
+const CHDB_DRIVER_VERSION: &str = "20260608";
 #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
-const CHDB_SHA256: &str = "82af2fa737c04737b0f15f2deb802338117d7c36279f828220dc2955cfa5c8fc";
+const CHDB_SHA256: &str = "b113d88b7f6a4a7906009bd6c2f64c60a88f07fb16239a32e66c326b4bda90ea";
 #[cfg(all(target_os = "macos", target_arch = "x86_64"))]
-const CHDB_SHA256: &str = "ecddfd0861931a9a43c623f76882873f08a3d0a312afc6ac893318237445ca78";
+const CHDB_SHA256: &str = "ae43ca75a95a603829d19c93ec1d8e013d765afdbdbd502f309b0f0af25b62b5";
 #[cfg(all(target_os = "linux", target_arch = "aarch64", target_env = "gnu"))]
-const CHDB_SHA256: &str = "b60cf82d932fe24d38144513c9669118949a1003eff0325f8252f3096f06ef57";
+const CHDB_SHA256: &str = "d0bfeefcb13a04b088b99a0f3ebb75cc15d7bd69c5915cc67f3c9ec4d1362c02";
 #[cfg(all(target_os = "linux", target_arch = "x86_64", target_env = "gnu"))]
-const CHDB_SHA256: &str = "6e77f2d46e51c71b9740fe50122e660732d325b4507ed9530c28e1decf311384";
+const CHDB_SHA256: &str = "ae4a554bbaabe8a30d37e80b942c491440910091852314c089c25024e33c951e";
 #[cfg(all(target_os = "windows", target_arch = "aarch64", target_env = "msvc"))]
 const CHDB_SHA256: &str = ""; // Unsupported platform
 #[cfg(all(target_os = "windows", target_arch = "x86_64", target_env = "msvc"))]
@@ -50,7 +51,7 @@ fn free_error(dylib: &Dylib, error: ErrorMessage) -> Result<Option<Error>, Error
 }
 
 impl Connection {
-    pub async fn connect(path: &str) -> Result<Self> {
+    pub async fn connect(path: &str, database: &str) -> Result<Self> {
         if CHDB_SHA256.is_empty() {
             return Err(Error::Message(
                 "chDB is not supported on the current platform.".into(),
@@ -65,10 +66,19 @@ impl Connection {
         if let Some(err) = free_error(&dylib, error)? {
             return Err(err);
         }
-        Ok(Self {
+        let conn = Self {
             conn: Mutex::new(conn),
             dylib,
-        })
+        };
+        {
+            // TODO: Migrate the database field to the dynamic library in the future.
+            let db = database.trim();
+            if !db.is_empty() {
+                let escaped = db.replace('"', "\"\"");
+                conn.execute(&format!("USE \"{}\"", escaped))?;
+            }
+        }
+        Ok(conn)
     }
 
     fn close(&self) -> Result<(), Error> {
@@ -146,6 +156,7 @@ impl Connection {
     }
 }
 
+// NOTE: use `cargo test -p chdb -- --test-threads 1` run test
 #[cfg(test)]
 mod tests {
     use crate::*;
@@ -153,7 +164,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_query() {
-        let conn = Connection::connect(":memory:").await.unwrap();
+        let conn = Connection::connect(":memory:", "").await.unwrap();
         let mut query = conn.query("select 'hello' as hello").unwrap();
         assert_eq!(query.columns.len(), 1);
         assert_eq!(
@@ -170,5 +181,48 @@ mod tests {
             Value::String("hello".into())
         );
         assert_eq!(query.rows_affected, None);
+    }
+
+    #[tokio::test]
+    async fn test_multiples_memory() {
+        let _conn1 = Connection::connect(":memory:", "").await.unwrap();
+        let _conn2 = Connection::connect(":memory:", "").await.unwrap();
+        let _conn3 = Connection::connect(":memory:", "").await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn test_multiples_persistent_database() {
+        let _conn1 = Connection::connect("./test-ch1.db", "").await.unwrap();
+        let conn2 = Connection::connect("./test-ch2.db", "").await;
+        assert!(conn2.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_memory_database_error() {
+        let file = Connection::connect("./test-ch2.db", "").await;
+
+        let memory = Connection::connect(":memory:", "").await;
+        assert!(memory.is_err());
+
+        // Drop the file connection and try again.
+        drop(file);
+
+        let memory = Connection::connect(":memory:", "").await;
+        assert!(memory.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_persistent_database_error() {
+        let memory = Connection::connect(":memory:", "").await.unwrap();
+
+        // Persistent connection cannot coexist with in-memory databases.
+        let file = Connection::connect("./test-ch.db", "").await;
+        assert!(file.is_err());
+
+        // Drop the in-memory connection and try again.
+        drop(memory);
+
+        let file = Connection::connect("./test-ch.db", "").await;
+        assert!(file.is_ok());
     }
 }

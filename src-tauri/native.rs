@@ -1,6 +1,7 @@
+use dir::theme_path;
 use serde::{Deserialize, Serialize};
 use std::fs;
-use tauri::{AppHandle, Manager, command};
+use tauri::{AppHandle, command};
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -40,33 +41,21 @@ impl Theme {
     }
 }
 
-const ERROR_MESSAGE: &str = "Get app config dir failed";
-
 #[command]
 pub fn set_theme(app: AppHandle, theme: Theme) {
     theme.apply(&app);
-    let p = app
-        .path()
-        .app_data_dir()
-        .expect(ERROR_MESSAGE)
-        .join(dir::THEME_FILE);
-    let _ = fs::write(p, theme.to_string());
+    let _ = fs::write(theme_path(), theme.to_string());
 }
 
 #[command]
-pub fn get_theme(app: AppHandle) -> Theme {
-    let p = app
-        .path()
-        .app_data_dir()
-        .expect(ERROR_MESSAGE)
-        .join(dir::THEME_FILE);
-    fs::read_to_string(p)
+pub fn get_theme() -> Theme {
+    fs::read_to_string(theme_path())
         .map(Theme::from)
         .unwrap_or(Theme::Auto)
 }
 
 pub fn restore_theme(app: &AppHandle) {
-    let theme = get_theme(app.clone());
+    let theme = get_theme();
     theme.apply(app);
 }
 

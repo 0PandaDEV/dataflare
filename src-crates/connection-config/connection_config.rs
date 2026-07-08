@@ -1,15 +1,16 @@
 use pgsq::TlsMode;
 use proxy::ProxyConfig;
-use secret_resolve::Secret;
+use secret_resolve::ResolveSecrets;
 use serde::{Deserialize, Serialize};
 use strum::{EnumProperty, IntoStaticStr};
 
-#[derive(Debug, Clone, Serialize, Deserialize, IntoStaticStr, EnumProperty)]
+#[derive(Debug, Clone, Serialize, Deserialize, IntoStaticStr, EnumProperty, ResolveSecrets)]
 #[serde(tag = "type", content = "options")]
 pub enum ConnectionConfig {
     SQLite(SqliteConfig),
     SQLCipher(SqlCipherConfig),
     PostgreSQL(PostgresConfig),
+    PGlite(PGliteConfig),
     CockroachDB(PostgresConfig),
     QuestDB(QuestDbConfig),
     MySQL(MySqlConfig),
@@ -62,117 +63,6 @@ impl ConnectionConfig {
     pub fn is_kv(&self) -> bool {
         self.get_str("kv").is_some()
     }
-
-    pub async fn secret_resolve(mut self) -> Result<Self, secret_resolve::Error> {
-        match &mut self {
-            ConnectionConfig::SQLite(_) => {}
-            ConnectionConfig::SQLCipher(config) => {
-                config.key = Secret::resolve(&config.key).await?;
-            }
-            ConnectionConfig::PostgreSQL(config) | ConnectionConfig::CockroachDB(config) => {
-                config.password = Secret::resolve(&config.password).await?;
-                ProxyConfig::secret_resolve(&mut config.proxy).await?;
-            }
-            ConnectionConfig::QuestDB(config) => {
-                config.password = Secret::resolve(&config.password).await?;
-                ProxyConfig::secret_resolve(&mut config.proxy).await?;
-            }
-            ConnectionConfig::MySQL(config) | ConnectionConfig::MariaDB(config) => {
-                config.password = Secret::resolve_option(config.password.take()).await?;
-                ProxyConfig::secret_resolve(&mut config.proxy).await?;
-            }
-            ConnectionConfig::ManticoreSearch(config) => {
-                ProxyConfig::secret_resolve(&mut config.proxy).await?;
-            }
-            ConnectionConfig::MSSQL(config) => {
-                if let MsSqlAuthConfig::SqlServer { password, .. } = &mut config.auth {
-                    *password = Secret::resolve(&password).await?;
-                }
-            }
-            ConnectionConfig::ClickHouse(config) => {
-                config.password = Secret::resolve(&config.password).await?;
-                ProxyConfig::secret_resolve(&mut config.proxy).await?;
-            }
-            ConnectionConfig::ChDb(_) => {}
-            ConnectionConfig::Databend(config) => {
-                config.password = Secret::resolve(&config.password).await?;
-                ProxyConfig::secret_resolve(&mut config.proxy).await?;
-            }
-            ConnectionConfig::BigQuery(config) => {
-                let BigQueryAuth::JsonKey { content } = &mut config.auth;
-                *content = Secret::resolve_option(content.take()).await?;
-            }
-            ConnectionConfig::Trino(config) => {
-                match &mut config.auth {
-                    TrinoAuth::Password { password } => {
-                        *password = Secret::resolve(&password).await?;
-                    }
-                    TrinoAuth::Jwt { token } => {
-                        *token = Secret::resolve(&token).await?;
-                    }
-                    TrinoAuth::None => {}
-                }
-                ProxyConfig::secret_resolve(&mut config.proxy).await?;
-            }
-            ConnectionConfig::Presto(config) => {
-                match &mut config.auth {
-                    PrestoAuth::Password { password } => {
-                        *password = Secret::resolve(&password).await?;
-                    }
-                    PrestoAuth::Jwt { token } => {
-                        *token = Secret::resolve(&token).await?;
-                    }
-                    PrestoAuth::None => {}
-                }
-                ProxyConfig::secret_resolve(&mut config.proxy).await?;
-            }
-            ConnectionConfig::Databricks(config) => {
-                let DatabricksAuth::Token { token } = &mut config.auth;
-                *token = Secret::resolve(&token).await?;
-                ProxyConfig::secret_resolve(&mut config.proxy).await?;
-            }
-            ConnectionConfig::DuckDB(_) => {}
-            ConnectionConfig::Turso(config) => match &mut config.database {
-                TursoDatabaseConfig::Remote { token, .. } => {
-                    *token = Secret::resolve(&token).await?;
-                }
-                TursoDatabaseConfig::Turso { encryption, .. } => {
-                    if let Some(TursoEncryptionConfig { key, .. }) = encryption {
-                        *key = Secret::resolve(&key).await?;
-                    }
-                }
-                _ => {}
-            },
-            ConnectionConfig::Rqlite(config) => {
-                config.password = Secret::resolve_option(config.password.take()).await?;
-                ProxyConfig::secret_resolve(&mut config.proxy).await?;
-            }
-            ConnectionConfig::EchoLite(config) => {
-                config.password = Secret::resolve(&config.password).await?;
-                ProxyConfig::secret_resolve(&mut config.proxy).await?;
-            }
-            ConnectionConfig::CloudflareD1(config) => {
-                config.api_token = Secret::resolve(&config.api_token).await?;
-            }
-            ConnectionConfig::WorkersAnalyticsEngine(config) => {
-                config.api_token = Secret::resolve(&config.api_token).await?;
-            }
-            ConnectionConfig::R2Sql(config) => {
-                config.api_token = Secret::resolve(&config.api_token).await?;
-            }
-            ConnectionConfig::CloudflareKv(config) => {
-                config.api_token = Secret::resolve(&config.api_token).await?;
-            }
-            ConnectionConfig::Redis(config) => {
-                config.password = Secret::resolve_option(config.password.take()).await?;
-                ProxyConfig::secret_resolve(&mut config.proxy).await?;
-            }
-            ConnectionConfig::S3(config) => {
-                config.secret_key = Secret::resolve(&config.secret_key).await?;
-            }
-        }
-        Ok(self)
-    }
 }
 
 // Must be consistent with the types in ConnectionConfig, but only for SQL databases
@@ -181,6 +71,7 @@ pub enum SqlDatabaseType {
     SQLite,
     SQLCipher,
     PostgreSQL,
+    PGlite,
     CockroachDB,
     QuestDB,
     MySQL,
@@ -208,7 +99,7 @@ pub enum SqlDatabaseType {
     R2Sql,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ResolveSecrets)]
 pub struct SqliteConfig {
     pub path: String,
     pub readonly: bool,
@@ -222,38 +113,43 @@ pub enum ConnectProtocol {
     Https,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ResolveSecrets)]
 pub struct ClickHouseConfig {
     pub protocol: ConnectProtocol,
     pub host: String,
     pub port: Option<u16>,
     pub user: String,
+    #[secret]
     pub password: String,
     pub database: String,
     pub readonly: bool,
+    #[secret]
     pub proxy: Option<ProxyConfig>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ResolveSecrets)]
 pub struct ChDbConfig {
     pub path: String,
+    pub database: String,
     pub readonly: bool,
     pub initial: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ResolveSecrets)]
 pub struct DatabendConfig {
     pub protocol: ConnectProtocol,
     pub host: String,
     pub port: Option<u16>,
     pub user: String,
+    #[secret]
     pub password: String,
     pub database: String,
     pub readonly: bool,
+    #[secret]
     pub proxy: Option<ProxyConfig>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ResolveSecrets)]
 pub struct BigQueryConfig {
     pub project_id: Option<String>,
     pub dataset: Option<String>,
@@ -264,129 +160,159 @@ pub struct BigQueryConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "lowercase", content = "options")]
 pub enum BigQueryAuth {
+    // BigQuery JsonKey stores the content of a JSON file; it is a file selector.
     JsonKey { content: Option<String> },
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ResolveSecrets)]
 pub struct DatabricksConfig {
     pub protocol: ConnectProtocol,
     pub host: String,
     pub port: Option<u16>,
     pub http_path: String,
+    #[secret]
     pub auth: DatabricksAuth,
     pub catalog: Option<String>,
     pub schema: Option<String>,
     pub allow_invalid_certs: bool,
     pub readonly: bool,
+    #[secret]
     pub proxy: Option<ProxyConfig>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ResolveSecrets)]
 #[serde(tag = "type", rename_all = "lowercase", content = "options")]
 pub enum DatabricksAuth {
-    Token { token: String },
+    Token {
+        #[secret]
+        token: String,
+    },
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ResolveSecrets)]
 pub struct TrinoConfig {
     pub protocol: ConnectProtocol,
     pub host: String,
     pub port: Option<u16>,
     pub user: String,
+    #[secret]
     pub auth: TrinoAuth,
     pub catalog: String,
     pub schema: String,
     pub allow_invalid_certs: bool,
     pub readonly: bool,
+    #[secret]
     pub proxy: Option<ProxyConfig>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ResolveSecrets)]
 #[serde(tag = "type", rename_all = "lowercase", content = "options")]
 pub enum TrinoAuth {
     None,
-    Password { password: String },
-    Jwt { token: String },
+    Password {
+        #[secret]
+        password: String,
+    },
+    Jwt {
+        #[secret]
+        token: String,
+    },
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ResolveSecrets)]
 pub struct PrestoConfig {
     pub protocol: ConnectProtocol,
     pub host: String,
     pub port: Option<u16>,
     pub user: String,
+    #[secret]
     pub auth: PrestoAuth,
     pub catalog: String,
     pub schema: String,
     pub allow_invalid_certs: bool,
     pub readonly: bool,
+    #[secret]
     pub proxy: Option<ProxyConfig>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ResolveSecrets)]
 #[serde(tag = "type", rename_all = "lowercase", content = "options")]
 pub enum PrestoAuth {
     None,
-    Password { password: String },
-    Jwt { token: String },
+    Password {
+        #[secret]
+        password: String,
+    },
+    Jwt {
+        #[secret]
+        token: String,
+    },
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ResolveSecrets)]
 pub struct RqliteConfig {
     pub https: bool,
     pub host: Option<String>,
     pub port: Option<u16>,
     pub user: Option<String>,
+    #[secret]
     pub password: Option<String>,
     pub allow_invalid_certs: bool,
     pub readonly: bool,
+    #[secret]
     pub proxy: Option<ProxyConfig>,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, ResolveSecrets)]
 pub struct EchoLiteConfig {
     pub host: Option<String>,
     pub port: Option<u16>,
     pub path: String,
+    #[secret]
     pub password: String,
     pub readonly: bool,
     pub initial: Option<String>,
+    #[secret]
     pub proxy: Option<ProxyConfig>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ResolveSecrets)]
 pub struct CloudflareD1Config {
     pub account_id: String,
     pub database_id: String,
+    #[secret]
     pub api_token: String,
     pub api_origin: Option<String>,
     pub readonly: bool,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ResolveSecrets)]
 pub struct WorkersAnalyticsEngineConfig {
     pub account_id: String,
+    #[secret]
     pub api_token: String,
     pub readonly: bool,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ResolveSecrets)]
 pub struct R2SqlConfig {
     pub account_id: String,
     pub bucket_name: String,
+    #[secret]
     pub api_token: String,
     pub readonly: bool,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ResolveSecrets)]
 pub struct SqlCipherConfig {
     pub path: String,
     pub readonly: bool,
+    #[secret]
     pub key: String,
     pub initial: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ResolveSecrets)]
 pub struct DuckDbConfig {
     pub path: String,
     #[serde(default)]
@@ -394,30 +320,41 @@ pub struct DuckDbConfig {
     pub initial: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ResolveSecrets)]
 pub struct PostgresConfig {
     pub host: Option<String>,
     pub port: Option<u16>,
     pub user: String,
+    #[secret]
     pub password: String,
     pub database: String,
     #[serde(default)]
     pub readonly: bool,
     pub initial: Option<String>,
     pub tls: PostgresTlsConfig,
+    #[secret]
     pub proxy: Option<ProxyConfig>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ResolveSecrets)]
+pub struct PGliteConfig {
+    pub path: String,
+    pub readonly: bool,
+    pub initial: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, ResolveSecrets)]
 pub struct QuestDbConfig {
     pub protocol: QuestConnectProtocol,
     pub host: Option<String>,
     pub port: Option<u16>,
     pub user: String,
+    #[secret]
     pub password: String,
     #[serde(default)]
     pub readonly: bool,
     pub tls: PostgresTlsConfig,
+    #[secret]
     pub proxy: Option<ProxyConfig>,
 }
 
@@ -428,11 +365,12 @@ pub enum QuestConnectProtocol {
     PgWire,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ResolveSecrets)]
 pub struct MySqlConfig {
     pub host: Option<String>,
     pub port: Option<u16>,
     pub user: String,
+    #[secret]
     pub password: Option<String>,
     pub database: Option<String>,
     #[serde(default)]
@@ -440,23 +378,26 @@ pub struct MySqlConfig {
     pub initial: Option<String>,
     #[serde(default)]
     pub tls: MySqlTlsConfig,
+    #[secret]
     pub proxy: Option<ProxyConfig>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ResolveSecrets)]
 pub struct ManticoreSearchConfig {
     pub host: Option<String>,
     pub port: Option<u16>,
     pub readonly: bool,
     pub initial: Option<String>,
     pub tls: MySqlTlsConfig,
+    #[secret]
     pub proxy: Option<ProxyConfig>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ResolveSecrets)]
 pub struct MsSqlConfig {
     pub host: Option<String>,
     pub port: Option<u16>,
+    #[secret]
     pub auth: MsSqlAuthConfig,
     pub database: String,
     #[serde(default)]
@@ -520,10 +461,14 @@ pub enum MySqlTlsMode {
     Disabled,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, ResolveSecrets)]
 #[serde(tag = "type", rename_all = "lowercase", content = "options")]
 pub enum MsSqlAuthConfig {
-    SqlServer { user: String, password: String },
+    SqlServer {
+        user: String,
+        #[secret]
+        password: String,
+    },
     Integrated,
 }
 
@@ -534,54 +479,59 @@ pub struct TlsConfig {
     pub ca: Option<String>,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, ResolveSecrets)]
 pub struct TursoConfig {
+    #[secret]
     pub database: TursoDatabaseConfig,
     #[serde(default)]
     pub readonly: bool,
     pub initial: Option<String>,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, ResolveSecrets)]
 #[serde(tag = "type", rename_all = "lowercase", content = "options")]
 pub enum TursoDatabaseConfig {
     // The local libsql was previously named 'file', so compatibility needs to be maintained.
     #[serde(alias = "file")]
-    LibSQL {
-        path: String,
-    },
+    LibSQL { path: String },
     Turso {
         path: String,
+        #[secret]
         encryption: Option<TursoEncryptionConfig>,
     },
     Remote {
         url: String,
+        #[secret]
         token: String,
     },
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ResolveSecrets)]
 pub struct TursoEncryptionConfig {
     pub cipher: String,
+    #[secret]
     pub key: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ResolveSecrets)]
 pub struct CloudflareKvConfig {
     pub account_id: String,
+    #[secret]
     pub api_token: String,
     pub default_namespace: String,
     pub readonly: bool,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ResolveSecrets)]
 pub struct RedisConfig {
     pub host: Option<String>,
     pub port: Option<u16>,
     pub username: Option<String>,
+    #[secret]
     pub password: Option<String>,
     pub readonly: bool,
     pub tls: RedisTlsConfig,
+    #[secret]
     pub proxy: Option<ProxyConfig>,
 }
 
@@ -592,9 +542,11 @@ pub struct RedisTlsConfig {
     pub config: TlsConfig,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ResolveSecrets)]
 pub struct S3Config {
+    #[secret]
     pub access_key: String,
+    #[secret]
     pub secret_key: String,
     pub endpoint: String,
     pub region: String,

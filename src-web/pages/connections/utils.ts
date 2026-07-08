@@ -18,6 +18,7 @@ import {
     MsSqlConfig,
     MySqlConfig,
     PostgresConfig,
+    PGliteConfig,
     RqliteConfig,
     SqlCipherConfig,
     SqliteConfig,
@@ -71,6 +72,16 @@ function defaultConfig(type: DatabaseType): DatabaseConfig {
             }
         }
         case SqlDatabaseType.DuckDB: {
+            return {
+                type,
+                options: {
+                    path: '',
+                    readonly: false,
+                    initial: null
+                }
+            }
+        }
+        case SqlDatabaseType.PGlite: {
             return {
                 type,
                 options: {
@@ -209,6 +220,7 @@ function defaultConfig(type: DatabaseType): DatabaseConfig {
                 type,
                 options: {
                     path: '',
+                    database: '',
                     readonly: false,
                     initial: null
                 }
@@ -498,9 +510,17 @@ export const toConnectionURL = async (conn: Connection) => {
             opt.path = config.options.path
             break
         }
+        case SqlDatabaseType.PGlite: {
+            opt.scheme = 'pglite'
+            opt.path = config.options.path
+            break
+        }
         case SqlDatabaseType.ChDb: {
             opt.scheme = 'chdb'
             opt.path = config.options.path
+            if (config.options.database !== '') {
+                opt.query['database'] = config.options.database
+            }
             break
         }
         case SqlDatabaseType.Turso: {
@@ -768,6 +788,7 @@ export const parseConnectionURL = async (url: string) => {
             let conn = createConnectionConfig(SqlDatabaseType.ChDb) as Connection<ChDbConfig>
             applyQuery(conn)
             conn.config.options.path = opt.path
+            conn.config.options.database = opt.query['database'] ?? ''
             return conn
         }
         case 'rqlite': {
@@ -864,6 +885,12 @@ export const parseConnectionURL = async (url: string) => {
             conn.config.options.user = opt.username
             conn.config.options.password = opt.password ?? ''
             conn.config.options.database = opt.path.slice(1)
+            return conn
+        }
+        case 'pglite': {
+            let conn = createConnectionConfig(SqlDatabaseType.PGlite) as Connection<PGliteConfig>
+            applyQuery(conn)
+            conn.config.options.path = opt.path
             return conn
         }
         case 'cockroach':

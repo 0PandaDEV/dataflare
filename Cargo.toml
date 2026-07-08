@@ -4,6 +4,9 @@ version = "0.0.0"
 edition.workspace = true
 publish = false
 
+[features]
+portable = ["dir/portable"]
+
 [[bin]]
 name = "dataflare"
 path = "src-tauri/main.rs"
@@ -20,14 +23,14 @@ edition = "2024"
 members = ["src-crates/*", "src-cli"]
 
 [build-dependencies]
-tauri-build = { version = "2.5.6", features = [] }
+tauri-build = { version = "2.6.3", features = [] }
 
 [dependencies]
 tauri = { workspace = true, features = [] }
-tauri-plugin-single-instance = "2.4.1"
-tauri-plugin-opener = "2.5.3"
-tauri-plugin-dialog = "2.7.0"
-tauri-plugin-fs = "2.5.0"
+tauri-plugin-single-instance = "2.4.2"
+tauri-plugin-opener = "2.5.4"
+tauri-plugin-dialog = "2.7.1"
+tauri-plugin-fs = "2.5.1"
 tauri-plugin-process = "2.3.1"
 tauri-plugin-clipboard-manager = "2.3.2"
 tauri-plugin-http = "2.5.9"
@@ -62,7 +65,7 @@ objc2-app-kit = "0.3.1"
 
 [workspace.dependencies]
 thiserror = "2.0.18"
-tauri = "2.10.3"
+tauri = "2.11.3"
 rand = "0.10.1"
 url = "2.5.4"
 hex = "0.4.3"
@@ -73,5 +76,5 @@ serde = { version = "1.0.219", features = ["derive"] }
 serde_json = { version = "1.0.140", features = ["float_roundtrip"] }
 strum = { version = "0.26.2", features = ["derive"] }
 futures-util = "0.3.31"
-rusqlite = { version = "0.40.0", features = ["bundled", "column_decltype"] }
+rusqlite = { version = "0.40.1", features = ["bundled", "column_decltype"] }
 serde_rusqlite = "0.43.0"

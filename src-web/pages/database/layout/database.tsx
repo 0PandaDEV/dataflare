@@ -38,6 +38,7 @@ export const ManageDatabase = memo(() => {
             case SqlDatabaseType.MariaDB:
             case SqlDatabaseType.MySql:
             case SqlDatabaseType.MsSql:
+            case SqlDatabaseType.ChDb:
             case SqlDatabaseType.ClickHouse:
             case SqlDatabaseType.Databend: {
                 conn.config.options.database = db

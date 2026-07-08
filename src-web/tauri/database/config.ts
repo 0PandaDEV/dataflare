@@ -35,6 +35,15 @@ export interface PostgresConfig {
     }
 }
 
+export interface PGliteConfig {
+    type: SqlDatabaseType.PGlite
+    options: {
+        path: string
+        readonly: boolean
+        initial: string | null
+    }
+}
+
 export interface QuestDbConfig {
     type: SqlDatabaseType.QuestDB
     options: {
@@ -148,6 +157,7 @@ export interface ChDbConfig {
     type: SqlDatabaseType.ChDb
     options: {
         path: string
+        database: string
         readonly: boolean
         initial: string | null
     }
@@ -366,6 +376,7 @@ export type SqlDatabaseConfig =
     | SqliteConfig
     | SqlCipherConfig
     | PostgresConfig
+    | PGliteConfig
     | CockroachDbConfig
     | QuestDbConfig
     | MySqlConfig
@@ -395,6 +406,7 @@ export const enum SqlDatabaseType {
     Sqlite = 'SQLite',
     SqlCipher = 'SQLCipher',
     Postgres = 'PostgreSQL',
+    PGlite = 'PGlite',
     CockroachDB = 'CockroachDB',
     QuestDB = 'QuestDB',
     MySql = 'MySQL',
@@ -439,6 +451,7 @@ export const ALL_DATABASE_TYPE: DatabaseType[] = [
     SqlDatabaseType.MsSql,
     SqlDatabaseType.MySql,
     SqlDatabaseType.Postgres,
+    SqlDatabaseType.PGlite,
     SqlDatabaseType.Presto,
     SqlDatabaseType.QuestDB,
     SqlDatabaseType.R2Sql,

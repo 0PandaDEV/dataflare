@@ -20,7 +20,7 @@ mod window_state;
 mod menu;
 
 use database::ConnectionStore;
-use lifecycle::{AppCheckUpdate, ConnectionsSearch, StateCache};
+use lifecycle::ConnectionsSearch;
 use tauri::async_runtime::{block_on, spawn};
 use tauri::{Manager, RunEvent, WindowEvent, generate_handler};
 use window_state::WindowStateManager;
@@ -46,11 +46,6 @@ fn main() {
         .plugin(tauri_plugin_clipboard_manager::init());
     
     builder = builder.invoke_handler(generate_handler![
-        // App Update
-        lifecycle::set_wait_app_restart,
-        lifecycle::get_wait_app_restart,
-        lifecycle::set_app_update_available,
-        lifecycle::get_app_update_available,
         // Connections page search value
         lifecycle::set_connections_search,
         lifecycle::get_connections_search,
@@ -106,6 +101,7 @@ fn main() {
         client::create_provider,
         client::update_provider,
         client::delete_provider,
+        client::provider_resolve_secret,
         // AI chat
         client::chat_list,
         client::create_chat,
@@ -153,8 +149,7 @@ fn main() {
 
     builder = builder
         .manage(ConnectionStore::new())
-        .manage(ConnectionsSearch::new())
-        .manage(AppCheckUpdate(StateCache::none()));
+        .manage(ConnectionsSearch::new());
 
     #[cfg(target_os = "macos")]
     {
@@ -169,15 +164,12 @@ fn main() {
     }
 
     builder = builder.setup(|app| {
-        let dir = app.path().app_data_dir()?;
-        if !dir.exists() {
-            let _ = std::fs::create_dir_all(&dir);
+        {
+            app.manage(WindowStateManager::new());
         }
         {
-            app.manage(WindowStateManager::new(&dir));
-        }
-        {
-            let state = block_on(client::Client::connect(&dir))?;
+            let data_path = dir::client_database_path();
+            let state = block_on(client::Client::connect(&data_path))?;
             app.manage(state);
         }
         native::restore_theme(app.app_handle());

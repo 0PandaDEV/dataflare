@@ -78,6 +78,7 @@ const MenuItems = ({
     const readonly = useReadonly()
     const refreshTable = useRefreshTables()
     const switchTabTo = useTabsStore((state) => state.switchTabTo)
+    const features = db.features
 
     const onDropSchema = () => {
         const run = async (cascade: boolean) => {
@@ -167,7 +168,7 @@ const MenuItems = ({
             >
                 {t('schemaManager')}
             </DropdownMenuItem>
-            {db.supportFunctions() && (
+            {features.functions && (
                 <DropdownMenuItem
                     onClick={() =>
                         switchTabTo({
@@ -178,7 +179,7 @@ const MenuItems = ({
                     {t('functionManager')}
                 </DropdownMenuItem>
             )}
-            {db.supportTriggers() && (
+            {features.triggers && (
                 <DropdownMenuItem
                     onClick={() =>
                         switchTabTo({
@@ -189,7 +190,7 @@ const MenuItems = ({
                     {t('triggerManager')}
                 </DropdownMenuItem>
             )}
-            {db.supportExtensions() && (
+            {features.extensions && (
                 <DropdownMenuItem
                     onClick={() =>
                         switchTabTo({

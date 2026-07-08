@@ -1,6 +1,6 @@
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http'
 import z, { ZodType } from 'zod'
-import { ProviderConfig, ProviderModelConfig, ProviderType } from '../../../tauri'
+import { ClientData, ProviderConfig, ProviderModelConfig, ProviderType } from '../../../tauri'
 
 export const defaultBaseURL = (type: ProviderType): string => {
     return {
@@ -13,6 +13,7 @@ export const defaultBaseURL = (type: ProviderType): string => {
         [ProviderType.Ollama]: 'http://localhost:11434/v1',
         [ProviderType.OpenAI]: 'https://api.openai.com/v1',
         [ProviderType.OpenRouter]: 'https://openrouter.ai/api/v1',
+        [ProviderType.Requesty]: 'https://router.requesty.ai/v1',
         [ProviderType.VercelAIGateway]: 'https://ai-gateway.vercel.sh/v1',
         [ProviderType.xAI]: 'https://api.x.ai/v1',
         [ProviderType.OpenAICompatible]: ''
@@ -28,6 +29,9 @@ export const normalizeBaseURL = <T>(url: string, emptyFallback: T): string | T =
 }
 
 export const fetchModels = async (config: ProviderConfig): Promise<ProviderModelConfig[]> => {
+    const apiKey = await ClientData.providerResolveSecret(config.apiKey)
+    config = { ...config, apiKey }
+
     const fetchJSON = async <T extends ZodType>(url: string, schema: T, headers?: Record<string, string>) => {
         const res = await tauriFetch(url, { method: 'GET', headers })
         if (res.status !== 200) {
@@ -50,6 +54,7 @@ export const fetchModels = async (config: ProviderConfig): Promise<ProviderModel
         case ProviderType.OpenAI:
         case ProviderType.VercelAIGateway:
         case ProviderType.Ollama:
+        case ProviderType.Requesty:
         case ProviderType.OpenAICompatible: {
             const schema = z.object({
                 data: z.array(

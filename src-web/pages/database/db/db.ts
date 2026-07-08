@@ -34,7 +34,8 @@ import {
     TableIndex,
     Extension,
     SetupExtension,
-    TableType
+    TableType,
+    DbFeatures
 } from './db-types'
 import { Escape } from './escape'
 
@@ -110,6 +111,7 @@ class Db {
             case SqlDatabaseType.EchoLite:
             case SqlDatabaseType.SqlCipher:
             case SqlDatabaseType.Postgres:
+            case SqlDatabaseType.PGlite:
             case SqlDatabaseType.MySql:
             case SqlDatabaseType.MariaDB:
             case SqlDatabaseType.CloudflareD1:
@@ -133,34 +135,113 @@ class Db {
         }
     }
 
-    public supportsMultipleSchemas(): boolean {
+    public get features(): DbFeatures {
         switch (this.type) {
             case SqlDatabaseType.Sqlite:
             case SqlDatabaseType.Turso:
             case SqlDatabaseType.Rqlite:
             case SqlDatabaseType.EchoLite:
             case SqlDatabaseType.SqlCipher:
-            case SqlDatabaseType.CloudflareD1:
-            case SqlDatabaseType.WorkersAnalyticsEngine:
-            case SqlDatabaseType.QuestDB:
-            case SqlDatabaseType.ManticoreSearch: {
-                return false
+            case SqlDatabaseType.CloudflareD1: {
+                return {
+                    multipleSchemas: false,
+                    duplicateTable: true,
+                    functions: false,
+                    extensions: false,
+                    triggers: true
+                }
             }
             case SqlDatabaseType.Postgres:
-            case SqlDatabaseType.CockroachDB:
+            case SqlDatabaseType.PGlite: {
+                return {
+                    multipleSchemas: true,
+                    duplicateTable: true,
+                    functions: true,
+                    extensions: true,
+                    triggers: true
+                }
+            }
+            case SqlDatabaseType.CockroachDB: {
+                return {
+                    multipleSchemas: true,
+                    duplicateTable: true,
+                    functions: true,
+                    extensions: true,
+                    triggers: false
+                }
+            }
             case SqlDatabaseType.MySql:
             case SqlDatabaseType.MariaDB:
-            case SqlDatabaseType.MsSql:
-            case SqlDatabaseType.ChDb:
+            case SqlDatabaseType.MsSql: {
+                return {
+                    multipleSchemas: true,
+                    duplicateTable: true,
+                    functions: true,
+                    extensions: false,
+                    triggers: true
+                }
+            }
             case SqlDatabaseType.ClickHouse:
+            case SqlDatabaseType.R2Sql: {
+                return {
+                    multipleSchemas: true,
+                    duplicateTable: false,
+                    functions: false,
+                    extensions: false,
+                    triggers: false
+                }
+            }
+            case SqlDatabaseType.ChDb: {
+                return {
+                    multipleSchemas: true,
+                    duplicateTable: false,
+                    functions: false,
+                    extensions: false,
+                    triggers: false
+                }
+            }
             case SqlDatabaseType.Databend:
             case SqlDatabaseType.Databricks:
             case SqlDatabaseType.Presto:
             case SqlDatabaseType.Trino:
-            case SqlDatabaseType.BigQuery:
-            case SqlDatabaseType.DuckDB:
-            case SqlDatabaseType.R2Sql: {
-                return true
+            case SqlDatabaseType.BigQuery: {
+                return {
+                    multipleSchemas: true,
+                    duplicateTable: true,
+                    functions: false,
+                    extensions: false,
+                    triggers: false
+                }
+            }
+            case SqlDatabaseType.DuckDB: {
+                return {
+                    multipleSchemas: true,
+                    duplicateTable: true,
+                    functions: false,
+                    // TODO: DuckDB can actually support duckdb_extensions()
+                    extensions: false,
+                    // DuckDB doesn't support triggers yet https://github.com/duckdb/duckdb/issues/750
+                    triggers: false
+                }
+            }
+            case SqlDatabaseType.ManticoreSearch: {
+                return {
+                    multipleSchemas: false,
+                    duplicateTable: true,
+                    functions: false,
+                    extensions: false,
+                    triggers: false
+                }
+            }
+            case SqlDatabaseType.WorkersAnalyticsEngine:
+            case SqlDatabaseType.QuestDB: {
+                return {
+                    multipleSchemas: false,
+                    duplicateTable: false,
+                    functions: false,
+                    extensions: false,
+                    triggers: false
+                }
             }
         }
     }
@@ -180,6 +261,7 @@ class Db {
                 throw 'Unsupported'
             }
             case SqlDatabaseType.Postgres:
+            case SqlDatabaseType.PGlite:
             case SqlDatabaseType.MySql:
             case SqlDatabaseType.MariaDB:
             case SqlDatabaseType.MsSql:
@@ -214,6 +296,7 @@ class Db {
                 return false
             }
             case SqlDatabaseType.Postgres:
+            case SqlDatabaseType.PGlite:
             case SqlDatabaseType.CockroachDB:
             case SqlDatabaseType.MySql:
             case SqlDatabaseType.MariaDB:
@@ -236,6 +319,7 @@ class Db {
         const t = this.escape.id(newSchemaName)
         switch (this.type) {
             case SqlDatabaseType.Postgres:
+            case SqlDatabaseType.PGlite:
             case SqlDatabaseType.CockroachDB:
             case SqlDatabaseType.Presto:
             case SqlDatabaseType.Trino: {
@@ -279,6 +363,7 @@ class Db {
     public allowRenameSchema(): boolean {
         switch (this.type) {
             case SqlDatabaseType.Postgres:
+            case SqlDatabaseType.PGlite:
             case SqlDatabaseType.CockroachDB:
             case SqlDatabaseType.ChDb:
             case SqlDatabaseType.ClickHouse:
@@ -311,6 +396,7 @@ class Db {
     public allowCascadeDropSchema(): boolean {
         switch (this.type) {
             case SqlDatabaseType.Postgres:
+            case SqlDatabaseType.PGlite:
             case SqlDatabaseType.CockroachDB:
             case SqlDatabaseType.DuckDB: {
                 return true
@@ -355,6 +441,7 @@ class Db {
                 throw 'Unsupported'
             }
             case SqlDatabaseType.Postgres:
+            case SqlDatabaseType.PGlite:
             case SqlDatabaseType.CockroachDB:
             case SqlDatabaseType.DuckDB:
             case SqlDatabaseType.MySql:
@@ -475,37 +562,6 @@ class Db {
         return [`CREATE TABLE ${this.escape.entry(entry)} (${contentSql});`, ...indexs]
     }
 
-    public supportDuplicateTable(): boolean {
-        switch (this.type) {
-            case SqlDatabaseType.Sqlite:
-            case SqlDatabaseType.SqlCipher:
-            case SqlDatabaseType.Postgres:
-            case SqlDatabaseType.CockroachDB:
-            case SqlDatabaseType.MySql:
-            case SqlDatabaseType.MariaDB:
-            case SqlDatabaseType.MsSql:
-            case SqlDatabaseType.Turso:
-            case SqlDatabaseType.DuckDB:
-            case SqlDatabaseType.Rqlite:
-            case SqlDatabaseType.EchoLite:
-            case SqlDatabaseType.CloudflareD1:
-            case SqlDatabaseType.Databend:
-            case SqlDatabaseType.Databricks:
-            case SqlDatabaseType.Presto:
-            case SqlDatabaseType.Trino:
-            case SqlDatabaseType.BigQuery:
-            case SqlDatabaseType.ManticoreSearch: {
-                return true
-            }
-            case SqlDatabaseType.ChDb:
-            case SqlDatabaseType.ClickHouse:
-            case SqlDatabaseType.WorkersAnalyticsEngine:
-            case SqlDatabaseType.R2Sql:
-            case SqlDatabaseType.QuestDB: {
-                return false
-            }
-        }
-    }
     public duplicateTableSql(entry: Entry, newTableName: string, duplicateRows: boolean): string {
         const table = this.escape.entry(entry)
         const newTable = this.escape.entry({ schema: entry.schema, table: newTableName })
@@ -526,6 +582,7 @@ class Db {
                     : `CREATE TABLE ${newTable} AS SELECT * FROM ${table} LIMIT 0;`
             }
             case SqlDatabaseType.Postgres:
+            case SqlDatabaseType.PGlite:
             case SqlDatabaseType.CockroachDB: {
                 return duplicateRows
                     ? `CREATE TABLE ${newTable} AS TABLE ${table};`
@@ -591,6 +648,10 @@ class Db {
             case SqlDatabaseType.Trino: {
                 return true
             }
+            case SqlDatabaseType.PGlite: {
+                // PGlite currently only supports its default database.
+                return false
+            }
             case SqlDatabaseType.Sqlite:
             case SqlDatabaseType.SqlCipher:
             case SqlDatabaseType.Turso:
@@ -612,6 +673,7 @@ class Db {
         let sql: string
         switch (this.type) {
             case SqlDatabaseType.Postgres:
+            case SqlDatabaseType.PGlite:
             case SqlDatabaseType.CockroachDB: {
                 sql = `SELECT current_database(), datname FROM pg_database WHERE datallowconn = TRUE ORDER BY datname;`
                 break
@@ -669,6 +731,7 @@ class Db {
     public createDatabaseSql(name: string): string {
         switch (this.type) {
             case SqlDatabaseType.Postgres:
+            case SqlDatabaseType.PGlite:
             case SqlDatabaseType.CockroachDB:
             case SqlDatabaseType.MySql:
             case SqlDatabaseType.MariaDB:
@@ -728,6 +791,7 @@ class Db {
                 break
             }
             case SqlDatabaseType.Postgres:
+            case SqlDatabaseType.PGlite:
             case SqlDatabaseType.CockroachDB: {
                 sql = `SELECT current_schema(), schema_name FROM INFORMATION_SCHEMA.SCHEMATA ORDER BY schema_name;`
                 break
@@ -849,6 +913,7 @@ class Db {
                 return tables
             }
             case SqlDatabaseType.Postgres:
+            case SqlDatabaseType.PGlite:
             case SqlDatabaseType.CockroachDB:
             case SqlDatabaseType.MySql:
             case SqlDatabaseType.MariaDB:
@@ -1024,6 +1089,7 @@ SELECT DISTINCT 'column', p.name FROM sqlite_master m JOIN pragma_table_info(m.n
                 break
             }
             case SqlDatabaseType.Postgres:
+            case SqlDatabaseType.PGlite:
             case SqlDatabaseType.CockroachDB: {
                 sql = `
 SELECT 'schema' AS type, schema_name AS name FROM INFORMATION_SCHEMA.SCHEMATA
@@ -1267,6 +1333,7 @@ SELECT DISTINCT 'column', column_name FROM INFORMATION_SCHEMA.COLUMNS;`
                 ).flat()
             }
             case SqlDatabaseType.Postgres:
+            case SqlDatabaseType.PGlite:
             case SqlDatabaseType.CockroachDB: {
                 return (
                     await Promise.all([
@@ -1392,6 +1459,7 @@ SELECT DISTINCT 'column', column_name FROM INFORMATION_SCHEMA.COLUMNS;`
                 return rows.map(([val]) => val)
             }
             case SqlDatabaseType.Postgres:
+            case SqlDatabaseType.PGlite:
             case SqlDatabaseType.CockroachDB: {
                 // TODO: Should differentiate types here
                 const rows = await this.select<[string]>(`SELECT DISTINCT proname FROM pg_proc;`)
@@ -1468,7 +1536,8 @@ UNION SELECT DISTINCT name FROM system.user_functions;`
                 )
                 return rows.map(([val]) => val)
             }
-            case SqlDatabaseType.Postgres: {
+            case SqlDatabaseType.Postgres:
+            case SqlDatabaseType.PGlite: {
                 return (await import('./static/postgres-datatypes')).default
             }
             case SqlDatabaseType.CockroachDB: {
@@ -1541,6 +1610,7 @@ UNION SELECT DISTINCT name FROM system.user_functions;`
                 return false
             }
             case SqlDatabaseType.Postgres:
+            case SqlDatabaseType.PGlite:
             case SqlDatabaseType.CockroachDB:
             case SqlDatabaseType.MySql:
             case SqlDatabaseType.MariaDB:
@@ -1553,6 +1623,7 @@ UNION SELECT DISTINCT name FROM system.user_functions;`
     public allowCascadeTruncateTable(): boolean {
         switch (this.type) {
             case SqlDatabaseType.Postgres:
+            case SqlDatabaseType.PGlite:
             case SqlDatabaseType.CockroachDB:
             case SqlDatabaseType.DuckDB: {
                 return true
@@ -1627,6 +1698,7 @@ UNION SELECT DISTINCT name FROM system.user_functions;`
             }
             case SqlDatabaseType.DuckDB:
             case SqlDatabaseType.Postgres:
+            case SqlDatabaseType.PGlite:
             case SqlDatabaseType.CockroachDB:
             case SqlDatabaseType.MySql:
             case SqlDatabaseType.MariaDB:
@@ -1651,6 +1723,7 @@ UNION SELECT DISTINCT name FROM system.user_functions;`
         let sql: string
         switch (this.type) {
             case SqlDatabaseType.Postgres:
+            case SqlDatabaseType.PGlite:
             case SqlDatabaseType.CockroachDB:
             case SqlDatabaseType.Sqlite:
             case SqlDatabaseType.DuckDB:
@@ -1716,6 +1789,7 @@ UNION SELECT DISTINCT name FROM system.user_functions;`
                 throw 'Unsupported'
             }
             case SqlDatabaseType.Postgres:
+            case SqlDatabaseType.PGlite:
             case SqlDatabaseType.CockroachDB: {
                 sql = `ALTER TABLE ${from}.${table} SET SCHEMA ${to};`
                 break
@@ -1759,6 +1833,7 @@ UNION SELECT DISTINCT name FROM system.user_functions;`
                 return false
             }
             case SqlDatabaseType.Postgres:
+            case SqlDatabaseType.PGlite:
             case SqlDatabaseType.CockroachDB:
             case SqlDatabaseType.MySql:
             case SqlDatabaseType.MariaDB:
@@ -1822,6 +1897,7 @@ ORDER BY c.ordinal_position;`
                 break
             }
             case SqlDatabaseType.Postgres:
+            case SqlDatabaseType.PGlite:
             case SqlDatabaseType.CockroachDB: {
                 sql = `
 WITH primary_keys AS (
@@ -2041,6 +2117,7 @@ WHERE
                     case SqlDatabaseType.Sqlite:
                     case SqlDatabaseType.SqlCipher:
                     case SqlDatabaseType.Postgres:
+                    case SqlDatabaseType.PGlite:
                     case SqlDatabaseType.CockroachDB:
                     case SqlDatabaseType.QuestDB:
                     case SqlDatabaseType.MySql:
@@ -2057,7 +2134,8 @@ WHERE
                     case SqlDatabaseType.Rqlite:
                     case SqlDatabaseType.EchoLite:
                     case SqlDatabaseType.CloudflareD1:
-                    case SqlDatabaseType.WorkersAnalyticsEngine: {
+                    case SqlDatabaseType.WorkersAnalyticsEngine:
+                    case SqlDatabaseType.R2Sql: {
                         sql = `SELECT DISTINCT ${column} FROM ${table} LIMIT ${limit};`
                         break
                     }
@@ -2065,8 +2143,7 @@ WHERE
                         sql = `SELECT DISTINCT TOP ${limit} ${column} FROM ${table};`
                         break
                     }
-                    // R2 SQL / ManticoreSearch does not support DISTINCT
-                    case SqlDatabaseType.R2Sql:
+                    // ManticoreSearch does not support `DISTINCT`
                     case SqlDatabaseType.ManticoreSearch: {
                         sql = `SELECT ${column} FROM ${table} LIMIT ${limit};`
                         break
@@ -2088,6 +2165,7 @@ WHERE
             case SqlDatabaseType.Sqlite:
             case SqlDatabaseType.SqlCipher:
             case SqlDatabaseType.Postgres:
+            case SqlDatabaseType.PGlite:
             case SqlDatabaseType.CockroachDB:
             case SqlDatabaseType.QuestDB:
             case SqlDatabaseType.MySql:
@@ -2141,6 +2219,7 @@ WHERE
         switch (this.type) {
             case SqlDatabaseType.Sqlite:
             case SqlDatabaseType.Postgres:
+            case SqlDatabaseType.PGlite:
             case SqlDatabaseType.CockroachDB:
             case SqlDatabaseType.MySql:
             case SqlDatabaseType.MariaDB:
@@ -2218,6 +2297,7 @@ WHERE
                 break
             }
             case SqlDatabaseType.Postgres:
+            case SqlDatabaseType.PGlite:
             case SqlDatabaseType.CockroachDB: {
                 sql = `SELECT kcu.column_name, ccu.table_schema, ccu.table_name, ccu.column_name FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE AS kcu JOIN INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE AS ccu ON kcu.constraint_name = ccu.constraint_name JOIN INFORMATION_SCHEMA.TABLE_CONSTRAINTS AS tc ON kcu.constraint_name = tc.constraint_name WHERE tc.constraint_type = 'FOREIGN KEY' AND kcu.table_schema = ${schema} AND kcu.table_name = ${table};`
                 break
@@ -2327,6 +2407,7 @@ WHERE
                 break
             }
             case SqlDatabaseType.Postgres:
+            case SqlDatabaseType.PGlite:
             case SqlDatabaseType.CockroachDB: {
                 sql = `
 SELECT
@@ -2522,6 +2603,7 @@ SELECT table_name, column_name, referenced_table_name, referenced_column_name FR
                 break
             }
             case SqlDatabaseType.Postgres:
+            case SqlDatabaseType.PGlite:
             case SqlDatabaseType.CockroachDB: {
                 sql = `
 SELECT
@@ -2627,6 +2709,7 @@ FROM
                 return new Map()
             }
             case SqlDatabaseType.Postgres:
+            case SqlDatabaseType.PGlite:
             case SqlDatabaseType.CockroachDB: {
                 sql = `
 SELECT
@@ -2763,6 +2846,7 @@ ORDER BY
                 break
             }
             case SqlDatabaseType.Postgres:
+            case SqlDatabaseType.PGlite:
             case SqlDatabaseType.CockroachDB: {
                 sql = `
 SELECT
@@ -2889,6 +2973,7 @@ WHERE t.type IN ('table', 'view') ORDER BY t.name, c.cid;`
                 return await Promise.all(tasks)
             }
             case SqlDatabaseType.Postgres:
+            case SqlDatabaseType.PGlite:
             case SqlDatabaseType.CockroachDB: {
                 sql = `
 WITH primary_keys AS (
@@ -3200,44 +3285,12 @@ ORDER BY c.table_name, c.ordinal_position;`
         return entrys
     }
 
-    public supportFunctions(): boolean {
-        switch (this.type) {
-            case SqlDatabaseType.Postgres:
-            case SqlDatabaseType.CockroachDB:
-            case SqlDatabaseType.MySql:
-            case SqlDatabaseType.MariaDB:
-            case SqlDatabaseType.MsSql: {
-                return true
-            }
-            case SqlDatabaseType.Sqlite:
-            case SqlDatabaseType.SqlCipher:
-            case SqlDatabaseType.Turso:
-            case SqlDatabaseType.Rqlite:
-            case SqlDatabaseType.EchoLite:
-            case SqlDatabaseType.CloudflareD1:
-            case SqlDatabaseType.WorkersAnalyticsEngine:
-            case SqlDatabaseType.R2Sql:
-            case SqlDatabaseType.DuckDB:
-            // Uncertain
-            case SqlDatabaseType.ChDb:
-            case SqlDatabaseType.ClickHouse:
-            case SqlDatabaseType.Databend:
-            case SqlDatabaseType.BigQuery:
-            case SqlDatabaseType.Databricks:
-            case SqlDatabaseType.Presto:
-            case SqlDatabaseType.Trino:
-            case SqlDatabaseType.QuestDB:
-            case SqlDatabaseType.ManticoreSearch: {
-                return false
-            }
-        }
-    }
-
     // Get all functions under a specified schema
     public async schemaFunctions(schemaName: string): Promise<DbFunction[]> {
         let sql: string
         switch (this.type) {
             case SqlDatabaseType.Postgres:
+            case SqlDatabaseType.PGlite:
             case SqlDatabaseType.CockroachDB: {
                 sql = `
 SELECT
@@ -3334,43 +3387,11 @@ ORDER BY ROUTINE_NAME;`
         })
     }
 
-    public supportExtensions(): boolean {
-        switch (this.type) {
-            case SqlDatabaseType.Postgres:
-            case SqlDatabaseType.CockroachDB: {
-                return true
-            }
-            case SqlDatabaseType.Sqlite:
-            case SqlDatabaseType.SqlCipher:
-            case SqlDatabaseType.Turso:
-            case SqlDatabaseType.Rqlite:
-            case SqlDatabaseType.EchoLite:
-            case SqlDatabaseType.CloudflareD1:
-            case SqlDatabaseType.WorkersAnalyticsEngine:
-            case SqlDatabaseType.R2Sql:
-            case SqlDatabaseType.MySql:
-            case SqlDatabaseType.MariaDB:
-            case SqlDatabaseType.ManticoreSearch:
-            case SqlDatabaseType.MsSql:
-            // TODO: DuckDB can actually support duckdb_extensions()
-            case SqlDatabaseType.DuckDB:
-            case SqlDatabaseType.ChDb:
-            case SqlDatabaseType.ClickHouse:
-            case SqlDatabaseType.Databend:
-            case SqlDatabaseType.Databricks:
-            case SqlDatabaseType.Presto:
-            case SqlDatabaseType.Trino:
-            case SqlDatabaseType.BigQuery:
-            case SqlDatabaseType.QuestDB: {
-                return false
-            }
-        }
-    }
-
     // Get all available extensions in the database
     public async extensions(): Promise<Extension[]> {
         switch (this.type) {
             case SqlDatabaseType.Postgres:
+            case SqlDatabaseType.PGlite:
             // TODO: CockroachDB might not support querying this way
             case SqlDatabaseType.CockroachDB: {
                 const sql = `
@@ -3439,39 +3460,6 @@ ORDER BY e.name;`
         }
     }
 
-    public supportTriggers(): boolean {
-        switch (this.type) {
-            case SqlDatabaseType.Postgres:
-            case SqlDatabaseType.Sqlite:
-            case SqlDatabaseType.SqlCipher:
-            case SqlDatabaseType.Turso:
-            case SqlDatabaseType.Rqlite:
-            case SqlDatabaseType.EchoLite:
-            case SqlDatabaseType.CloudflareD1:
-            case SqlDatabaseType.MySql:
-            case SqlDatabaseType.MariaDB:
-            case SqlDatabaseType.MsSql: {
-                return true
-            }
-            case SqlDatabaseType.CockroachDB:
-            // DuckDB doesn't support triggers yet https://github.com/duckdb/duckdb/issues/750
-            case SqlDatabaseType.DuckDB:
-            case SqlDatabaseType.ChDb:
-            case SqlDatabaseType.ClickHouse:
-            case SqlDatabaseType.Databend:
-            case SqlDatabaseType.Databricks:
-            case SqlDatabaseType.Presto:
-            case SqlDatabaseType.Trino:
-            case SqlDatabaseType.BigQuery:
-            case SqlDatabaseType.QuestDB:
-            case SqlDatabaseType.WorkersAnalyticsEngine:
-            case SqlDatabaseType.R2Sql:
-            case SqlDatabaseType.ManticoreSearch: {
-                return false
-            }
-        }
-    }
-
     // Get all triggers under a specified schema
     public async schemaTriggers(schemaName: string): Promise<Trigger[]> {
         const schema = this.escape.value(schemaName)
@@ -3493,7 +3481,8 @@ ORDER BY e.name;`
                     }
                 })
             }
-            case SqlDatabaseType.Postgres: {
+            case SqlDatabaseType.Postgres:
+            case SqlDatabaseType.PGlite: {
                 const sql = `
 SELECT
     t.tgname AS trigger_name,
@@ -3658,6 +3647,7 @@ ORDER BY table_name;`
         switch (this.type) {
             case SqlDatabaseType.Sqlite:
             case SqlDatabaseType.Postgres:
+            case SqlDatabaseType.PGlite:
             case SqlDatabaseType.CockroachDB:
             case SqlDatabaseType.MySql:
             case SqlDatabaseType.MariaDB:
@@ -3715,6 +3705,7 @@ ORDER BY table_name;`
         switch (this.type) {
             case SqlDatabaseType.Sqlite:
             case SqlDatabaseType.Postgres:
+            case SqlDatabaseType.PGlite:
             case SqlDatabaseType.CockroachDB:
             case SqlDatabaseType.MySql:
             case SqlDatabaseType.MariaDB:
@@ -3771,6 +3762,7 @@ ORDER BY table_name;`
                 return `DROP INDEX ${this.escape.id(indexName)};`
             }
             case SqlDatabaseType.Postgres:
+            case SqlDatabaseType.PGlite:
             case SqlDatabaseType.CockroachDB:
             case SqlDatabaseType.DuckDB: {
                 const schema = this.escape.id(entry.schema)
@@ -3830,6 +3822,7 @@ ORDER BY table_name;`
                 return false
             }
             case SqlDatabaseType.Postgres:
+            case SqlDatabaseType.PGlite:
             case SqlDatabaseType.CockroachDB: {
                 return true
             }
@@ -3863,6 +3856,7 @@ ORDER BY table_name;`
                 throw 'Unsupported'
             }
             case SqlDatabaseType.Postgres:
+            case SqlDatabaseType.PGlite:
             case SqlDatabaseType.CockroachDB: {
                 const schema = this.escape.id(entry.schema)
                 const index = this.escape.id(indexName)
@@ -3907,6 +3901,7 @@ ORDER BY table_name;`
             case SqlDatabaseType.Sqlite:
             case SqlDatabaseType.SqlCipher:
             case SqlDatabaseType.Postgres:
+            case SqlDatabaseType.PGlite:
             case SqlDatabaseType.CockroachDB:
             case SqlDatabaseType.MySql:
             case SqlDatabaseType.MariaDB:
@@ -3945,6 +3940,7 @@ ORDER BY table_name;`
                 case SqlDatabaseType.Turso:
                 case SqlDatabaseType.DuckDB:
                 case SqlDatabaseType.Postgres:
+                case SqlDatabaseType.PGlite:
                 case SqlDatabaseType.CockroachDB:
                 case SqlDatabaseType.MsSql:
                 case SqlDatabaseType.SqlCipher:

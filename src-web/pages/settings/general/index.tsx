@@ -3,7 +3,6 @@ import { ScrollView, Select } from '../../../ui'
 import { SettingsGroup, SettingsItem } from '../item'
 import { AppearanceSetting } from './appearance'
 import { Footer } from './footer'
-import { UpdateSettings } from './update'
 import { ZoomSetting } from './zoom'
 
 export const GeneralSettings = () => {
@@ -29,11 +28,6 @@ export const GeneralSettings = () => {
             </SettingsGroup>
 
             <SettingsGroup name={t('about')}>
-                <SettingsItem name={t('update')}>
-                    <div className='text-xs text-tertiary'>
-                        <UpdateSettings />
-                    </div>
-                </SettingsItem>
                 <div className='my-4'>
                     <Footer />
                 </div>

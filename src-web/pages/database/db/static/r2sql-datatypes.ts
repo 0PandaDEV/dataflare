@@ -1,5 +1,6 @@
+// From:
 // https://developers.cloudflare.com/r2-sql/sql-reference/
-// Date: 2026-04-21
+// Date: 2026-06-08
 export default [
     'BOOLEAN',
     'INT',
@@ -13,6 +14,7 @@ export default [
     'TEXT',
     'STRING',
     'TIMESTAMP',
+    'TIMESTAMPTZ',
     'BYTEA',
     'DATE',
     'STRUCT',

@@ -13,6 +13,7 @@ export class Escape {
         switch (this.type) {
             case SqlDatabaseType.Sqlite:
             case SqlDatabaseType.Postgres:
+            case SqlDatabaseType.PGlite:
             case SqlDatabaseType.Turso:
             case SqlDatabaseType.Rqlite:
             case SqlDatabaseType.EchoLite:
@@ -94,7 +95,8 @@ export class Escape {
             case SqlDatabaseType.ManticoreSearch: {
                 return `X'${hex}'`
             }
-            case SqlDatabaseType.Postgres: {
+            case SqlDatabaseType.Postgres:
+            case SqlDatabaseType.PGlite: {
                 return `'\\x${hex}'`
             }
             case SqlDatabaseType.CockroachDB: {
@@ -126,6 +128,7 @@ export class Escape {
                 return this.id(entry.table)
             }
             case SqlDatabaseType.Postgres:
+            case SqlDatabaseType.PGlite:
             case SqlDatabaseType.MySql:
             case SqlDatabaseType.MariaDB:
             case SqlDatabaseType.MsSql:

@@ -1,6 +1,14 @@
 import { Value } from '../../../tauri'
 import { Entry } from '../hooks/use-store'
 
+export interface DbFeatures {
+    multipleSchemas: boolean
+    duplicateTable: boolean
+    functions: boolean
+    extensions: boolean
+    triggers: boolean
+}
+
 export interface Tables {
     [schema: string]: Table[]
 }

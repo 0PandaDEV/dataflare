@@ -14,7 +14,7 @@ import {
 import { useReadonly } from '../hooks/use-db'
 import { useConnection } from '../hooks/use-store'
 import { DEFAULT_AGENTS } from './default-agents'
-import { AgentService, createAgent } from './services'
+import { AgentFactory, AgentService, createAgent } from './services'
 import type { AgentMessage } from './services'
 
 let inputCache = ''
@@ -206,7 +206,7 @@ export const useAgent = (config: ChatConfig | null) => {
     const currentAgent = useCurrentAgent(config)
     const pcm = useProviderModel(config)
 
-    const agentRef = useRef<AgentService | null>(null)
+    const agentRef = useRef<AgentFactory | null>(null)
 
     const type = connection.config.type as SqlDatabaseType
 
@@ -218,8 +218,24 @@ export const useAgent = (config: ChatConfig | null) => {
             return
         }
         const instructions = currentAgent?.instructions ?? DEFAULT_AGENTS[0].instructions
-        const agent = createAgent(pcm, type, readonly, instructions)
-        agentRef.current = agent
+        let agentPromise: Promise<AgentService> | null = null
+        agentRef.current = () => {
+            if (agentPromise === null) {
+                agentPromise = ClientData.providerResolveSecret(pcm.config.apiKey)
+                    .then((apiKey) => {
+                        const resolved = {
+                            ...pcm,
+                            config: { ...pcm.config, apiKey }
+                        }
+                        return createAgent(resolved, type, readonly, instructions)
+                    })
+                    .catch((err) => {
+                        agentPromise = null
+                        throw err instanceof Error ? err : new Error(String(err))
+                    })
+            }
+            return agentPromise
+        }
     }, [pcm, type, readonly, currentAgent])
 
     return agentRef

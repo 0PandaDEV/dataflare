@@ -68,7 +68,7 @@ const TriggerManager = ({ hidden }: ManagerProps) => {
     return (
         <>
             <div className='flex h-11 min-w-max shrink-0 items-center gap-2 px-4'>
-                {db.supportsMultipleSchemas() && (
+                {db.features.multipleSchemas && (
                     <Select
                         className='w-36 bg-main'
                         value={schema}

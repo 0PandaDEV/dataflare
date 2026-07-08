@@ -85,7 +85,7 @@ export const PostgresConnection = ({
 
     const initSQL = (
         <InitialSQL
-            placeholder={`SET TIME ZONE 'Asia/Singapore';\nSET client_encoding TO 'UTF8';\nSET statement_timeout TO '10s';`}
+            placeholder={`SET client_encoding TO 'UTF8';\nSET statement_timeout TO '10s';`}
             sql={options.initial}
             onChange={(val) => setOpt('initial', val)}
         />

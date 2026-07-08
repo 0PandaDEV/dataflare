@@ -74,6 +74,7 @@ pub union Data {
 #[repr(C)]
 struct ConnectOptions {
     pub path: StringRef,
+    // TODO: readonly, database
 }
 
 impl ConnectOptions {
@@ -106,7 +107,7 @@ extern "C" fn df_close(handle: *mut Connection) {
 extern "C" fn df_execute(handle: *mut Connection, sql: StringRef, error: *mut ErrorMessage) {
     let call = || {
         let connection = unsafe { &*handle };
-        connection.execute(sql.as_str()).string_err()?;
+        let _ = connection.query(sql.as_str()).string_err()?;
         Ok(())
     };
     if let Err(err) = call() {

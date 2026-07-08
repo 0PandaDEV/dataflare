@@ -1,0 +1,11 @@
+[workspace]
+resolver = "3"
+members = ["pglite", "libpglite"]
+
+[workspace.dependencies]
+postgres-types = "0.2.14"
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = "symbols"

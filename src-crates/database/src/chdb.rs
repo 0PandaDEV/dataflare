@@ -11,7 +11,7 @@ pub struct ChDbConnection {
 
 impl ChDbConnection {
     async fn conn(config: ChDbConfig) -> Result<Connection> {
-        let conn = Connection::connect(&config.path).await?;
+        let conn = Connection::connect(&config.path, &config.database).await?;
         if let Some(sql) = config.initial {
             conn.execute(&sql)?;
         }

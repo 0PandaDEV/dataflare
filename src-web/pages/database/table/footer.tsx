@@ -48,7 +48,7 @@ export const TableFooter = ({
     const { tf, numberUtil } = useTranslation()
 
     return (
-        <footer className='flex h-8 items-center gap-2 border-t border-separator px-4 text-xs text-secondary'>
+        <footer className='flex h-8 items-center gap-2 overflow-hidden border-t border-separator px-4 text-xs text-secondary'>
             <div className='flex w-1/5 min-w-min grow gap-4'>
                 {rowCount !== undefined && (
                     <IconValue

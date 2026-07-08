@@ -1,5 +1,5 @@
 // https://developers.cloudflare.com/r2-sql/sql-reference/
-// Date: 2026-04-21
+// Date: 2026-06-25
 export default [
     // Core functions
     'coalesce',
@@ -156,6 +156,8 @@ export default [
     'mean',
     'min',
     'max',
+    'median',
+    'percentile_cont',
     'approx_percentile_cont',
     'approx_percentile_cont_with_weight',
     'approx_median',
@@ -187,6 +189,18 @@ export default [
     'bool_or',
     'first_value',
     'last_value',
+    'array_agg',
+    'string_agg',
+    // Window functions
+    'row_number',
+    'rank',
+    'dense_rank',
+    'percent_rank',
+    'cume_dist',
+    'ntile',
+    'lag',
+    'lead',
+    'nth_value',
     // Array functions
     'make_array',
     'string_to_array',

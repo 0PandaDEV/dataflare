@@ -568,6 +568,13 @@ export const translationText = {
         [Language.zhCN]: `数据库`,
         [Language.ja]: 'データベース'
     },
+    path: {
+        [Language.en]: `Path`,
+        [Language.de]: 'Pfad',
+        [Language.frFR]: `Chemin`,
+        [Language.zhCN]: `路径`,
+        [Language.ja]: 'パス'
+    },
     auth: {
         [Language.en]: `Auth`,
         [Language.de]: 'Authentifizierung',
@@ -1140,6 +1147,13 @@ export const translationText = {
         [Language.frFR]: `Mise à jour`,
         [Language.zhCN]: `更新`,
         [Language.ja]: '更新'
+    },
+    download: {
+        [Language.en]: `Download`,
+        [Language.de]: 'Herunterladen',
+        [Language.frFR]: `Télécharger`,
+        [Language.zhCN]: `下载`,
+        [Language.ja]: 'ダウンロード'
     },
     primaryKey: {
         [Language.en]: `Primary Key`,

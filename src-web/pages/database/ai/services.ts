@@ -53,7 +53,7 @@ export const availableTools = () => {
         { name: ToolName.runSQLQuery, allowAutoapproval: false },
         { name: ToolName.generateChart, allowAutoapproval: false }
     ]
-    if (!db.supportsMultipleSchemas()) {
+    if (!db.features.multipleSchemas) {
         tools.shift()
     }
     return tools
@@ -115,6 +115,7 @@ const createLanguageModel = (config: ProviderConfig, modelID: string): LanguageM
         case ProviderType.Ollama:
         case ProviderType.OpenAI:
         case ProviderType.OpenRouter:
+        case ProviderType.Requesty:
         case ProviderType.VercelAIGateway:
         case ProviderType.xAI:
         case ProviderType.OpenAICompatible: {
@@ -159,6 +160,9 @@ const databaseName = (type: SqlDatabaseType): string => {
         case SqlDatabaseType.ChDb: {
             return 'ClickHouse(chDB)'
         }
+        case SqlDatabaseType.PGlite: {
+            return 'PostgreSQL(PGlite)'
+        }
         case SqlDatabaseType.Postgres:
         case SqlDatabaseType.CockroachDB:
         case SqlDatabaseType.QuestDB:
@@ -178,7 +182,7 @@ const databaseName = (type: SqlDatabaseType): string => {
 }
 
 const createAgentTools = (type: SqlDatabaseType, readonly: boolean) => {
-    const multipleSchemas = db.supportsMultipleSchemas()
+    const multipleSchemas = db.features.multipleSchemas
 
     const [minSample, defaultSample, maxSample] = [1, 5, 20]
     const sampleDescribe = `The maximum number of sample values to retrieve (${minSample}-${maxSample}), default: ${defaultSample}`
@@ -430,6 +434,7 @@ export const createAgent = (
 }
 
 export type AgentService = ReturnType<typeof createAgent>
+export type AgentFactory = () => Promise<AgentService>
 export type AgentMessage = InferAgentUIMessage<AgentService>
 export type AgentPart = AgentMessage['parts'][number]
 export type AgentToolPart = ToolUIPart<InferUITools<AgentService['tools']>>
@@ -443,9 +448,9 @@ type SendMessageOptions = {
 } & ChatRequestOptions
 
 export class AgentTransport implements ChatTransport<AgentMessage> {
-    agent: MutableRefObject<AgentService | null>
+    agent: MutableRefObject<AgentFactory | null>
 
-    constructor(agent: MutableRefObject<AgentService | null>) {
+    constructor(agent: MutableRefObject<AgentFactory | null>) {
         this.agent = agent
     }
 
@@ -456,7 +461,8 @@ export class AgentTransport implements ChatTransport<AgentMessage> {
         if (this.agent.current === null) {
             throw new Error(t('noModelSelected'))
         }
-        const stream = await this.agent.current.stream({
+        const agent = await this.agent.current()
+        const stream = await agent.stream({
             abortSignal,
             messages: await convertToModelMessages(messages)
         })

@@ -1,3 +1,66 @@
+## v3.1.3
+
+**Published:** `2026-07-01T12:58:02Z`
+
+**Changes**
+
+- Add support for `PGlite` <sup>experimental</sup>
+- Upgrade `DuckDB` to v1.5.4
+- Add `Requesty` as an AI provider
+- Update Tauri dependencies and improve window drag regions
+- Add more `R2 SQL` functions and keywords
+- Fix database directory selection for `PGlite` and `chDB`
+
+## v3.1.2
+
+**Published:** `2026-06-15T07:19:12Z`
+
+**Changes**
+
+- Add support for portable app builds on Windows
+- Resolve AI provider API keys on demand
+- Update R2 SQL keywords, functions, and data types
+- Improve database feature checks
+- Fix database table footer overflow
+
+## v3.1.1
+
+**Published:** `2026-06-08T21:00:00Z`
+
+**Changes**
+
+- Upgrade `chDB` to v26.5.0
+- Add `ResolveSecrets` derive macro
+- Hide command windows during command execution on Windows
+
+## v3.1.0
+
+**Published:** `2026-06-07T02:43:20Z`
+
+**Changes**
+
+- Add support for `chDB` database
+- Upgrade `SQLite` to v3.53.2
+- Fix `ClickHouse` datatype handling
+- Add password script to read passwords from external sources
+
+```bash
+# Read from environment variables
+env: MY_PASSWORD
+
+# Read from environment variables file
+env: /path/.env#MY_PASSWORD
+
+# Read from file content
+file: /path/file
+
+# Read from shell output
+exec: echo 'MY_PASSWORD'
+
+# Read from 1password CLI
+exec: op read "op://Vault/Item/password"
+```
+
 ## v3.0.5
 
 **Published:** `2026-05-28T09:30:00Z`

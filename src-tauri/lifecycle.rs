@@ -1,55 +1,5 @@
-use std::sync::atomic::{AtomicU8, Ordering};
 use std::sync::{Arc, Mutex};
-use tauri::{AppHandle, Manager, State, command};
-
-struct WatiRestart;
-
-#[command]
-pub fn set_wait_app_restart(app: AppHandle) {
-    app.manage(WatiRestart);
-}
-
-#[command]
-pub fn get_wait_app_restart(app: AppHandle) -> bool {
-    app.try_state::<WatiRestart>().is_some()
-}
-
-pub struct StateCache(Arc<AtomicU8>);
-
-impl StateCache {
-    pub fn none() -> Self {
-        Self(Arc::new(AtomicU8::new(0)))
-    }
-    fn get(&self) -> Option<bool> {
-        match self.0.load(Ordering::Acquire) {
-            1 => Some(true),
-            2 => Some(false),
-            _ => None,
-        }
-    }
-    fn set(&self, value: Option<bool>) {
-        self.0.store(
-            match value {
-                Some(true) => 1,
-                Some(false) => 2,
-                None => 0,
-            },
-            Ordering::Release,
-        )
-    }
-}
-
-pub struct AppCheckUpdate(pub StateCache);
-
-#[command]
-pub fn set_app_update_available(sc: State<AppCheckUpdate>, available: bool) {
-    sc.0.set(Some(available));
-}
-
-#[command]
-pub fn get_app_update_available(sc: State<AppCheckUpdate>) -> Option<bool> {
-    sc.0.get()
-}
+use tauri::{State, command};
 
 pub struct ConnectionsSearch {
     value: Arc<Mutex<String>>,

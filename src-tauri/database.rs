@@ -1,6 +1,7 @@
 use crate::ipc::to_response;
 use database::{BatchInsertOptions, ChunkInsert, ConnectionConfig, Database, SingleInsert};
 use kvdb::{CommandOutput, Cursor, GenericValue, Key, Keys, KvInput, KvOutput, NameSpace};
+use secret_resolve::ResolveSecrets;
 use serde::{Serialize, Serializer};
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -39,8 +40,8 @@ impl Serialize for Error {
 }
 
 #[command]
-pub async fn test(config: ConnectionConfig) -> Result<Option<String>> {
-    let config = config.secret_resolve().await?;
+pub async fn test(mut config: ConnectionConfig) -> Result<Option<String>> {
+    config.resolve_secrets().await?;
     let version = Database::test(config).await?;
     Ok(version)
 }
@@ -49,9 +50,9 @@ pub async fn test(config: ConnectionConfig) -> Result<Option<String>> {
 pub async fn connect(
     store: State<'_, ConnectionStore>,
     window: Window,
-    config: ConnectionConfig,
+    mut config: ConnectionConfig,
 ) -> Result<()> {
-    let config = config.secret_resolve().await?;
+    config.resolve_secrets().await?;
     store.connect(window.label().into(), config).await
 }
 
