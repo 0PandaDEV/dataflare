@@ -74,7 +74,16 @@ const InstallUpdate = ({
         // TODO: Implement portable update self
         // https://github.com/mitsuhiko/self-replace
         if (await isPortable()) {
-            openURL(PORTABLE_UPDATE_URL)
+            showMessageBox(
+                t('installUpdate'),
+                'Dataflare currently does not support automatic updates for portable versions, please download the latest portable version and overwrite the current Dataflare manually.',
+                'warning',
+                {
+                    label: t('download'),
+                    primary: true,
+                    onClick: () => openURL(PORTABLE_UPDATE_URL)
+                }
+            )
             return false
         }
         // NOTE: On Windows, this restarts immediately after installation

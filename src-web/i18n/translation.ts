@@ -1197,6 +1197,13 @@ export const translationText = {
         [Language.zhCN]: `更新`,
         [Language.ja]: '更新'
     },
+    download: {
+        [Language.en]: `Download`,
+        [Language.de]: 'Herunterladen',
+        [Language.frFR]: `Télécharger`,
+        [Language.zhCN]: `下载`,
+        [Language.ja]: 'ダウンロード'
+    },
     primaryKey: {
         [Language.en]: `Primary Key`,
         [Language.de]: 'Primärschlüssel',
